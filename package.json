@@ -1,0 +1,44 @@
+{
+  "name": "node-push-service",
+  "version": "1.0.0",
+  "description": "A Push Service for node to receive notifications from FCM.",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest --notify --coverage",
+    "test:watch": "jest --notify --coverage --watch",
+    "pretty": "prettier-eslint --single-quote --trailing-comma es5 --write \"**/*.js\" \"**/*.json\"",
+    "pretty:check": "prettier-eslint --single-quote --trailing-comma es5 --list-different --log-level silent \"**/*.js\" \"**/*.json\"",
+    "lint": "eslint 'src/**/*.js'",
+    "lint:fix": "eslint 'src/**/*.js' --fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/cutii/node-push-service.git"
+  },
+  "keywords": [
+    "push",
+    "service",
+    "fcm",
+    "notifications",
+    "node",
+    "electron"
+  ],
+  "author": "MatthieuLemoine",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/cutii/node-push-service/issues"
+  },
+  "homepage": "https://github.com/cutii/node-push-service#readme",
+  "devDependencies": {
+    "babel-eslint": "^7.2.3",
+    "eslint": "^4.4.1",
+    "eslint-plugin-jest": "^20.0.3",
+    "prettier": "^1.5.3",
+    "prettier-eslint": "^6.4.2",
+    "prettier-eslint-cli": "^4.1.1"
+  },
+  "dependencies": {
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1"
+  }
+}
