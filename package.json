@@ -38,6 +38,8 @@
     "prettier-eslint-cli": "^4.1.1"
   },
   "dependencies": {
+    "crypto-random-string": "^1.0.0",
+    "protobufjs": "^6.8.0",
     "request": "^2.81.0",
     "request-promise": "^4.2.1"
   }

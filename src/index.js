@@ -1,15 +1,16 @@
-const request = require('request-promise');
+const randomString = require('crypto-random-string');
+const registerGCM = require('./register/gcm');
+const registerFCM = require('./register/fcm');
 
-const REGISTER_URL = 'https://android.clients.google.com/c2dm/register3';
+const appId = randomString(15);
+const senderId = '650340851757';
 
-request({
-  url     : REGISTER_URL,
-  method  : 'POST',
-  headers : {
-    Authorization    : 'AidLogin',
-    ['content-type'] : 'application/x-www-form-urlencoded',
-  },
-  body : '',
-})
-  .then(console.log)
+const p256dh = '';
+const auth = '';
+
+registerGCM(appId, senderId)
+  .then(subscription =>
+    registerFCM({ endpoint : subscription.token, senderId, p256dh, auth })
+  )
+  .then(() => console.log('Registered'))
   .catch(console.error);
