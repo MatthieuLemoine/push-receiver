@@ -22,6 +22,7 @@ module.exports = function registerFCM({ senderId, token, appId }) {
           encryption_key    : keys.publicKey,
           encryption_auth   : keys.authSecret,
         },
+        json : true,
       })
     )
     .then(saveFCM);
