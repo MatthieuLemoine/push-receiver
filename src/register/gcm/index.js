@@ -1,9 +1,12 @@
-const fs = require('fs');
 const path = require('path');
 const request = require('request-promise');
 const protobuf = require('protobufjs');
+const fcmKey = require('../fcm/server-key');
+const { toBase64 } = require('../../utils/base64');
+const { saveGCM } = require('../../store');
 
-const CREDENTIALS_PATH = path.join(__dirname, '..', 'credentials.json');
+const serverKey = toBase64(Buffer.from(fcmKey));
+
 // google_apis/gcm/engine/registration_request.cc
 const REGISTER_URL = 'https://android.clients.google.com/c2dm/register3';
 // google_apis/gcm/engine/checkin_request.cc
@@ -11,10 +14,10 @@ const CHECKIN_URL = 'https://android.clients.google.com/checkin';
 let AndroidCheckinRequest;
 let AndroidCheckinResponse;
 
-module.exports = function registerGCM(appId, senderId) {
+module.exports = function registerGCM(appId) {
   return loadProtoFile()
     .then(checkIn)
-    .then(options => register(options, appId, senderId));
+    .then(options => register(options, appId));
 };
 
 function checkIn(buffer) {
@@ -37,12 +40,16 @@ function checkIn(buffer) {
   });
 }
 
-function register({ androidId, securityToken, versionInfo }, appId, senderId) {
+function register({ androidId, securityToken, versionInfo }, appId) {
   const body = {
-    app    : appId,
-    // 'X-subtype' : '',
-    device : androidId,
-    sender : senderId,
+    app         : 'org.chromium.linux',
+    'X-subtype' : appId,
+    device      : androidId,
+    sender      : serverKey,
+    // gmsv        : '62.0.3180.0',
+    // appid       : appId,
+    // scope       : '',
+    // 'X-scope'   : '',
   };
   return request({
     url     : REGISTER_URL,
@@ -62,8 +69,7 @@ function register({ androidId, securityToken, versionInfo }, appId, senderId) {
         appId,
         versionInfo,
       };
-      fs.writeFileSync(CREDENTIALS_PATH, JSON.stringify(credentials, null, 2));
-      return credentials;
+      return saveGCM(credentials);
     });
 }
 

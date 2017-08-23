@@ -4,13 +4,9 @@ const registerFCM = require('./register/fcm');
 
 const appId = randomString(15);
 const senderId = '650340851757';
-
-const p256dh = '';
-const auth = '';
-
-registerGCM(appId, senderId)
+registerGCM(appId)
   .then(subscription =>
-    registerFCM({ endpoint : subscription.token, senderId, p256dh, auth })
+    registerFCM({ token : subscription.token, senderId, appId })
   )
   .then(() => console.log('Registered'))
   .catch(console.error);
