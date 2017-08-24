@@ -4,6 +4,8 @@
   "description": "A Push Service for node to receive notifications from FCM.",
   "main": "src/index.js",
   "scripts": {
+    "start": "node src/",
+    "register": "node src/register/",
     "test": "jest --notify --coverage",
     "test:watch": "jest --notify --coverage --watch",
     "pretty": "prettier-eslint --single-quote --trailing-comma es5 --write \"**/*.js\" \"**/*.json\"",

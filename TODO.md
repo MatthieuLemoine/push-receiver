@@ -2,12 +2,8 @@
 
 Find a better name
 
-x-subtype !!!!!!
-Endpoint ? p256dh ? auth ? applicationServerKey ?
+Try https://github.com/google/protobuf/tree/master/js instead of protobufjs
 
-
-- Generate a PushSubscription
-- Subscribe to FCM
 - Receive notifications
 - Decrypt : Generate shared secret then Decrypt
 - Display / Forward notifications
