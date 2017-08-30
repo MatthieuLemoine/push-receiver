@@ -1,12 +1,17 @@
 const randomString = require('crypto-random-string');
-const registerGCM = require('./register/gcm');
-const registerFCM = require('./register/fcm');
+const logger = require('../logger');
+const registerGCM = require('./gcm');
+const registerFCM = require('./fcm');
 
 const appId = randomString(15);
 const senderId = '650340851757';
+
+logger.info(`Registration started for app : ${appId}`);
+
 registerGCM(appId)
-  .then(subscription =>
-    registerFCM({ token : subscription.token, senderId, appId })
-  )
-  .then(() => console.log('Registered'))
-  .catch(console.error);
+  .then(subscription => {
+    logger.success('GCM registration complete');
+    return registerFCM({ token : subscription.token, senderId, appId });
+  })
+  .then(() => logger.success('FCM registration complete'))
+  .catch(error => logger.error(error.message));

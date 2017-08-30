@@ -1,26 +1,30 @@
 {
-  "name": "node-push-service",
+  "name": "push-receiver",
   "version": "1.0.0",
-  "description": "A Push Service for node to receive notifications from FCM.",
+  "description":
+    "A library to subscribe to GCM/FCM and receive notifications within a node process..",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/",
     "register": "node src/register/",
     "test": "jest --notify --coverage",
     "test:watch": "jest --notify --coverage --watch",
-    "pretty": "prettier-eslint --single-quote --trailing-comma es5 --write \"**/*.js\" \"**/*.json\"",
-    "pretty:check": "prettier-eslint --single-quote --trailing-comma es5 --list-different --log-level silent \"**/*.js\" \"**/*.json\"",
+    "pretty":
+      "prettier-eslint --single-quote --trailing-comma es5 --write \"**/*.js\" \"**/*.json\"",
+    "pretty:check":
+      "prettier-eslint --single-quote --trailing-comma es5 --list-different --log-level silent \"**/*.js\" \"**/*.json\"",
     "lint": "eslint 'src/**/*.js'",
     "lint:fix": "eslint 'src/**/*.js' --fix"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/cutii/node-push-service.git"
+    "url": "git+ssh://git@github.com/MatthieuLemoine/push-receiver.git"
   },
   "keywords": [
     "push",
     "service",
     "fcm",
+    "gcm",
     "notifications",
     "node",
     "electron"
@@ -28,9 +32,9 @@
   "author": "MatthieuLemoine",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/cutii/node-push-service/issues"
+    "url": "https://github.com/MatthieuLemoine/push-receiver/issues"
   },
-  "homepage": "https://github.com/cutii/node-push-service#readme",
+  "homepage": "https://github.com/MatthieuLemoine/push-receiver#readme",
   "devDependencies": {
     "babel-eslint": "^7.2.3",
     "eslint": "^4.4.1",
@@ -40,6 +44,7 @@
     "prettier-eslint-cli": "^4.1.1"
   },
   "dependencies": {
+    "chalk": "^2.1.0",
     "crypto-random-string": "^1.0.0",
     "protobufjs": "^6.8.0",
     "request": "^2.81.0",

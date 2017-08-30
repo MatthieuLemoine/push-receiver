@@ -1,7 +1,5 @@
 # TODO
 
-Find a better name
-
 Try https://github.com/google/protobuf/tree/master/js instead of protobufjs
 
 - Receive notifications

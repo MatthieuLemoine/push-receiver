@@ -1,16 +1,17 @@
 const path = require('path');
 const request = require('request-promise');
 const protobuf = require('protobufjs');
+const logger = require('../../logger');
+const { resolveTimeout } = require('../../utils/timeout');
 const fcmKey = require('../fcm/server-key');
 const { toBase64 } = require('../../utils/base64');
 const { saveGCM } = require('../../store');
 
 const serverKey = toBase64(Buffer.from(fcmKey));
 
-// google_apis/gcm/engine/registration_request.cc
 const REGISTER_URL = 'https://android.clients.google.com/c2dm/register3';
-// google_apis/gcm/engine/checkin_request.cc
 const CHECKIN_URL = 'https://android.clients.google.com/checkin';
+
 let AndroidCheckinRequest;
 let AndroidCheckinResponse;
 
@@ -51,15 +52,7 @@ function register({ androidId, securityToken, versionInfo }, appId) {
     // scope       : '',
     // 'X-scope'   : '',
   };
-  return request({
-    url     : REGISTER_URL,
-    method  : 'POST',
-    headers : {
-      Authorization    : `AidLogin ${androidId}:${securityToken}`,
-      ['content-type'] : 'application/x-www-form-urlencoded',
-    },
-    form : body,
-  })
+  return postRegister({ androidId, securityToken, body })
     .then(response => response.split('=')[1])
     .then(token => {
       const credentials = {
@@ -71,6 +64,30 @@ function register({ androidId, securityToken, versionInfo }, appId) {
       };
       return saveGCM(credentials);
     });
+}
+
+function postRegister({ androidId, securityToken, body, retry = 0 }) {
+  return request({
+    url     : REGISTER_URL,
+    method  : 'POST',
+    headers : {
+      Authorization    : `AidLogin ${androidId}:${securityToken}`,
+      ['content-type'] : 'application/x-www-form-urlencoded',
+    },
+    form : body,
+  }).then(response => {
+    if (response.includes('Error')) {
+      logger.warn(`Register request has failed with ${response}`);
+      if (retry >= 5) {
+        throw new Error('GCM register has failed');
+      }
+      logger.warn(`Retry... ${retry + 1}`);
+      return resolveTimeout(1000).then(() =>
+        postRegister({ androidId, securityToken, body, retry : retry + 1 })
+      );
+    }
+    return response;
+  });
 }
 
 function loadProtoFile() {

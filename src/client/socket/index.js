@@ -9,10 +9,12 @@ module.exports = {
 };
 
 function listening() {
-  return connect().then(waitingForData).then(buffer => {
-    console.log('Listening', buffer);
-    return buffer;
-  });
+  return connect()
+    .then(waitingForData)
+    .then(buffer => {
+      console.log('Listening', buffer);
+      return buffer;
+    });
 }
 
 function send(payload, RequestType, ResponseType) {
