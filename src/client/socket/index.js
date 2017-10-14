@@ -3,35 +3,21 @@ const tls = require('tls');
 const HOST = 'mtalk.google.com';
 const PORT = 5228;
 
-module.exports = {
-  listening,
-  send,
-};
+module.exports = connect;
 
-function listening() {
-  return connect()
-    .then(waitingForData)
-    .then(buffer => {
-      console.log('Listening', buffer);
-      return buffer;
-    });
+async function connect(payload, RequestType, preBuffer) {
+  const socket = await connectSocket();
+  // Payload to send to login with MCS server
+  const buffer = toProtoBuf(payload, RequestType);
+  socket.write(
+    Buffer.concat([preBuffer, buffer], preBuffer.length + buffer.length)
+  );
+  // Listen for incoming messages
+  const result = await listen(socket);
+  return result;
 }
 
-function send(payload, RequestType, ResponseType) {
-  return connect()
-    .then(socket => {
-      console.log(socket.authorized);
-      socket.write(toProtoBuf(payload, RequestType));
-      return waitingForData(socket);
-    })
-    .then(buffer => {
-      console.log(buffer);
-      console.log(ResponseType.decode(buffer));
-      return ResponseType.decode(buffer);
-    });
-}
-
-function connect() {
+function connectSocket() {
   return new Promise(resolve => {
     const socket = new tls.TLSSocket();
     socket.setKeepAlive(true);
@@ -46,20 +32,13 @@ function connect() {
   });
 }
 
-function waitingForData(socket) {
+function listen(socket) {
   return new Promise((resolve, reject) => {
-    const buffArray = [];
     socket.on('data', buffer => {
-      buffArray.push(buffer);
+      console.log(buffer);
     });
-    socket.on('error', err => {
-      console.error(err);
-      reject(err);
-    });
-    socket.on('end', () => {
-      const buffer = Buffer.concat(buffArray);
-      resolve(buffer);
-    });
+    socket.on('error', reject);
+    socket.on('end', () => console.log('Socket ended') || resolve());
   });
 }
 

@@ -2,9 +2,12 @@ const randomString = require('crypto-random-string');
 const logger = require('../logger');
 const registerGCM = require('./gcm');
 const registerFCM = require('./fcm');
+const storage = require('../store/storage.json');
 
+// Should be unique by app
 const appId = randomString(15);
-const senderId = '650340851757';
+// FIREBASE senderId link to your project
+const senderId = storage.fcm.senderId;
 
 logger.info(`Registration started for app : ${appId}`);
 

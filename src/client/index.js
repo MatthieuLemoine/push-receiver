@@ -1,42 +1,39 @@
 const path = require('path');
 const protobuf = require('protobufjs');
-const { send, listening } = require('./socket');
+const socketConnect = require('./socket');
 
-module.exports = {
-  connect,
-};
+module.exports = connect;
 
-function connect({ androidId, securityToken, versionInfo }) {
-  return loadProtoFile()
-    .then(root => login({ androidId, securityToken, versionInfo, root }))
-    .then(response => {
-      listening().catch(console.error);
-      return response;
-    });
+async function connect({ androidId, securityToken, versionInfo }) {
+  const proto = await loadProtoFile();
+  const result = await login(androidId, securityToken, versionInfo, proto);
+  return result;
 }
 
 function loadProtoFile() {
   return protobuf.load(path.join(__dirname, 'mcs.proto'));
 }
 
-function login({ androidId, securityToken, versionInfo, root }) {
-  const LoginRequestType = root.lookupType('mcs_proto.LoginRequest');
-  const LoginResponseType = root.lookupType('mcs_proto.LoginResponse');
+function login(androidId, securityToken, versionInfo, proto) {
+  const LoginRequestType = proto.lookupType('mcs_proto.LoginRequest');
   const loginRequest = {
-    adaptive_heartbeat : false,
-    authService        : 2,
-    authToken          : securityToken,
-    id                 : `chrome-${versionInfo}`,
-    domain             : 'mcs.android.com',
-    deviceId           : `android-${androidId.toString('hex')}`,
-    networkType        : 1,
-    resource           : androidId,
-    user               : androidId,
-    useRmq2            : true,
-    setting            : [
-      { name : 'new_vc', value : '1' },
-      { name : 'hbping', value : `${1000 * 60 * 2}` },
-    ],
+    adaptiveHeartbeat    : false,
+    authService          : 2,
+    authToken            : securityToken,
+    id                   : 'chrome-63.0.3234.0',
+    domain               : 'mcs.android.com',
+    deviceId             : `android-${parseInt(androidId, 10).toString(16)}`,
+    networkType          : 1,
+    resource             : androidId,
+    user                 : androidId,
+    useRmq2              : true,
+    setting              : [{ name : 'new_vc', value : '1' }],
+    receivedPersistentId : [],
+    clientEvent          : [],
   };
-  return send(loginRequest, LoginRequestType, LoginResponseType);
+  return socketConnect(
+    loginRequest,
+    LoginRequestType,
+    Buffer.from([41, 2, 149, 1])
+  );
 }
