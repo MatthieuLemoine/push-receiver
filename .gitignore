@@ -4,3 +4,4 @@ npm-debug.log
 coverage
 *.pem
 storage.json
+web/

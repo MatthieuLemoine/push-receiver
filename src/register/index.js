@@ -1,11 +1,11 @@
-const randomString = require('crypto-random-string');
+const uuidv4 = require('uuid/v4');
 const logger = require('../logger');
 const registerGCM = require('./gcm');
 const registerFCM = require('./fcm');
 const storage = require('../store/storage.json');
 
-// Should be unique by app
-const appId = randomString(15);
+// Should be unique by app - One GCM registration/token by app/appId
+const appId = `wp:receiver.push.com#${uuidv4()}`;
 // FIREBASE senderId link to your project
 const senderId = storage.fcm.senderId;
 

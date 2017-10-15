@@ -28,6 +28,7 @@ function login(androidId, securityToken, versionInfo, proto) {
     user                 : androidId,
     useRmq2              : true,
     setting              : [{ name : 'new_vc', value : '1' }],
+    // Id of the last notification received
     receivedPersistentId : [],
     clientEvent          : [],
   };

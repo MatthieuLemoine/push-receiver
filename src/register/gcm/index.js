@@ -26,7 +26,7 @@ function checkIn(buffer) {
     url     : CHECKIN_URL,
     method  : 'POST',
     headers : {
-      ['content-type'] : 'application/x-protobuf',
+      'Content-Type' : 'application/x-protobuf',
     },
     body     : buffer,
     encoding : null,
@@ -71,8 +71,8 @@ function postRegister({ androidId, securityToken, body, retry = 0 }) {
     url     : REGISTER_URL,
     method  : 'POST',
     headers : {
-      Authorization    : `AidLogin ${androidId}:${securityToken}`,
-      ['content-type'] : 'application/x-www-form-urlencoded',
+      Authorization  : `AidLogin ${androidId}:${securityToken}`,
+      'Content-Type' : 'application/x-www-form-urlencoded',
     },
     form : body,
   }).then(response => {
@@ -98,7 +98,16 @@ function loadProtoFile() {
     AndroidCheckinResponse = root.lookupType(
       'checkin_proto.AndroidCheckinResponse'
     );
-    const payload = { checkin : { type : 3 }, version : 2 };
+    const payload = {
+      userSerialNumber : 0,
+      checkin          : { type : 3, userNumber : 0 },
+      version          : 2,
+      chromeBuild      : {
+        platform      : 3,
+        chromeVersion : '63.0.3234.0',
+        channel       : 4,
+      },
+    };
     const errMsg = AndroidCheckinRequest.verify(payload);
     if (errMsg) throw Error(errMsg);
     const message = AndroidCheckinRequest.create(payload);

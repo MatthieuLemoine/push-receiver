@@ -9,8 +9,8 @@ const FCM_ENDPOINT = 'https://fcm.googleapis.com/fcm/send';
 module.exports = function registerFCM({ senderId, token, appId }) {
   return createKeys(appId, senderId)
     .then(saveKeys)
-    .then(keys =>
-      request({
+    .then(keys => {
+      return request({
         url     : FCM_SUBSCRIBE,
         method  : 'POST',
         headers : {
@@ -19,12 +19,18 @@ module.exports = function registerFCM({ senderId, token, appId }) {
         form : {
           authorized_entity : senderId,
           endpoint          : `${FCM_ENDPOINT}/${token}`,
-          encryption_key    : keys.publicKey,
-          encryption_auth   : keys.authSecret,
+          encryption_key    : keys.publicKey
+            .replace(/=/g, '')
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_'),
+          encryption_auth : keys.authSecret
+            .replace(/=/g, '')
+            .replace(/\+/g, '-')
+            .replace(/\//g, '_'),
         },
-        json : true,
-      })
-    )
+      });
+    })
+    .then(response => JSON.parse(response))
     .then(saveFCM);
 };
 
