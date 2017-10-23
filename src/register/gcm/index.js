@@ -6,11 +6,22 @@ const { resolveTimeout } = require('../../utils/timeout');
 const fcmKey = require('../fcm/server-key');
 const { toBase64 } = require('../../utils/base64');
 const { saveGCM } = require('../../store');
+const Long = require('long');
 
 const serverKey = toBase64(Buffer.from(fcmKey));
 
 const REGISTER_URL = 'https://android.clients.google.com/c2dm/register3';
 const CHECKIN_URL = 'https://android.clients.google.com/checkin';
+
+let root;
+
+// const agentOptions = {
+//   host               : 'android.clients.google.com',
+//   port               : '443',
+//   path               : '/',
+//   rejectUnauthorized : false,
+// };
+// const agent = new https.Agent(agentOptions);
 
 let AndroidCheckinRequest;
 let AndroidCheckinResponse;
@@ -21,7 +32,8 @@ module.exports = function registerGCM(appId) {
     .then(options => register(options, appId));
 };
 
-function checkIn(buffer) {
+function checkIn({ androidId, securityToken } = {}) {
+  const buffer = getCheckinRequest(androidId, securityToken);
   return request({
     url     : CHECKIN_URL,
     method  : 'POST',
@@ -30,6 +42,7 @@ function checkIn(buffer) {
     },
     body     : buffer,
     encoding : null,
+    // agent,
   }).then(body => {
     const message = AndroidCheckinResponse.decode(body);
     const object = AndroidCheckinResponse.toObject(message, {
@@ -75,6 +88,7 @@ function postRegister({ androidId, securityToken, body, retry = 0 }) {
       'Content-Type' : 'application/x-www-form-urlencoded',
     },
     form : body,
+    // agent,
   }).then(response => {
     if (response.includes('Error')) {
       logger.warn(`Register request has failed with ${response}`);
@@ -91,26 +105,36 @@ function postRegister({ androidId, securityToken, body, retry = 0 }) {
 }
 
 function loadProtoFile() {
-  return protobuf.load(path.join(__dirname, 'checkin.proto')).then(root => {
-    AndroidCheckinRequest = root.lookupType(
-      'checkin_proto.AndroidCheckinRequest'
-    );
-    AndroidCheckinResponse = root.lookupType(
-      'checkin_proto.AndroidCheckinResponse'
-    );
-    const payload = {
-      userSerialNumber : 0,
-      checkin          : { type : 3, userNumber : 0 },
-      version          : 2,
-      chromeBuild      : {
-        platform      : 3,
+  return protobuf
+    .load(path.join(__dirname, 'checkin.proto'))
+    .then(r => (root = r));
+}
+
+function getCheckinRequest(androidId, securityToken) {
+  AndroidCheckinRequest = root.lookupType(
+    'checkin_proto.AndroidCheckinRequest'
+  );
+  AndroidCheckinResponse = root.lookupType(
+    'checkin_proto.AndroidCheckinResponse'
+  );
+  const payload = {
+    userSerialNumber : 0,
+    checkin          : {
+      type        : 3,
+      chromeBuild : {
+        platform      : 2,
         chromeVersion : '63.0.3234.0',
-        channel       : 4,
+        channel       : 1,
       },
-    };
-    const errMsg = AndroidCheckinRequest.verify(payload);
-    if (errMsg) throw Error(errMsg);
-    const message = AndroidCheckinRequest.create(payload);
-    return AndroidCheckinRequest.encode(message).finish();
-  });
+    },
+    version       : 3,
+    id            : androidId ? Long.fromString(androidId) : undefined,
+    securityToken : securityToken
+      ? Long.fromString(securityToken, true)
+      : undefined,
+  };
+  const errMsg = AndroidCheckinRequest.verify(payload);
+  if (errMsg) throw Error(errMsg);
+  const message = AndroidCheckinRequest.create(payload);
+  return AndroidCheckinRequest.encode(message).finish();
 }

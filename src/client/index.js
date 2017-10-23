@@ -1,5 +1,6 @@
 const path = require('path');
 const protobuf = require('protobufjs');
+const Long = require('long');
 const socketConnect = require('./socket');
 
 module.exports = connect;
@@ -16,13 +17,14 @@ function loadProtoFile() {
 
 function login(androidId, securityToken, versionInfo, proto) {
   const LoginRequestType = proto.lookupType('mcs_proto.LoginRequest');
+  const hexAndroidId = Long.fromString(androidId).toString(16);
   const loginRequest = {
     adaptiveHeartbeat    : false,
     authService          : 2,
     authToken            : securityToken,
     id                   : 'chrome-63.0.3234.0',
     domain               : 'mcs.android.com',
-    deviceId             : `android-${parseInt(androidId, 10).toString(16)}`,
+    deviceId             : `android-${hexAndroidId}`,
     networkType          : 1,
     resource             : androidId,
     user                 : androidId,

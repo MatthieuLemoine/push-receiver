@@ -2,9 +2,8 @@
 
 Try https://github.com/google/protobuf/tree/master/js instead of protobufjs
 
-- Receive notifications
 - Decrypt : Generate shared secret then Decrypt
 - Display / Forward notifications
-- Clean up / async await
+- Clean up / lib / async await
 
-- GCM Periodic checkin
+- GCM Periodic checkin / on client start
