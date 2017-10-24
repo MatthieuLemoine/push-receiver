@@ -1,5 +1,5 @@
 const request = require('request-promise');
-const store = require('./src/store/storage.json');
+const store = require('../../src/store/storage.json');
 
 (async () => {
   try {

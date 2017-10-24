@@ -1,11 +1,26 @@
-const tls = require('tls');
+import tls from 'tls';
+import EventEmitter from 'events';
+import { warn, info } from '../../logger';
+import decrypt from '../../utils/decrypt';
+import { saveGCM } from '../../store';
 
 const HOST = 'mtalk.google.com';
 const PORT = 5228;
 
-module.exports = connect;
+export const ON_NOTIFICATION_RECEIVED = 'ON_NOTIFICATION_RECEIVED';
 
-async function connect(payload, RequestType, preBuffer) {
+const emitter = new EventEmitter();
+
+export function addListener(event, listener) {
+  emitter.on(event, listener);
+}
+
+export default async function connect(
+  payload,
+  RequestType,
+  preBuffer,
+  NotificationSchema
+) {
   const socket = await connectSocket();
   // Payload to send to login with MCS server
   const buffer = toProtoBuf(payload, RequestType);
@@ -13,8 +28,7 @@ async function connect(payload, RequestType, preBuffer) {
     Buffer.concat([preBuffer, buffer], preBuffer.length + buffer.length)
   );
   // Listen for incoming messages
-  const result = await listen(socket);
-  return result;
+  return listen(socket, NotificationSchema);
 }
 
 function connectSocket() {
@@ -32,14 +46,12 @@ function connectSocket() {
   });
 }
 
-function listen(socket) {
-  return new Promise((resolve, reject) => {
-    socket.on('data', buffer => {
-      console.log(buffer);
-    });
-    socket.on('error', reject);
-    socket.on('end', () => console.log('Socket ended') || resolve());
+function listen(socket, NotificationSchema) {
+  socket.on('data', buffer => onMessageReceived(buffer, NotificationSchema));
+  socket.on('error', error => {
+    throw new Error(error);
   });
+  socket.on('end', () => warn('Socket ended'));
 }
 
 function toProtoBuf(payload, Type) {
@@ -47,4 +59,29 @@ function toProtoBuf(payload, Type) {
   if (errMsg) throw Error(errMsg);
   const message = Type.create(payload);
   return Type.encode(message).finish();
+}
+
+function onMessageReceived(buffer, NotificationSchema) {
+  try {
+    const object = NotificationSchema.toObject(
+      NotificationSchema.decode(buffer),
+      {
+        longs : String,
+        enums : String,
+        bytes : Buffer,
+      }
+    );
+    const message = decrypt(object);
+    if (message) {
+      info('*** Notification received ***');
+      console.log(message);
+      // Update last notification id
+      saveGCM({ persistentId : object.persistentId });
+      // Send notification
+      emitter.emit(ON_NOTIFICATION_RECEIVED, buffer);
+    }
+  } catch (e) {
+    // Not a notification
+    return;
+  }
 }

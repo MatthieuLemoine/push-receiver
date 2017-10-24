@@ -1,23 +1,29 @@
-const chalk = require('chalk');
+import chalk from 'chalk';
 
-module.exports = { success, info, error, warn, debug };
-
-function success(...args) {
+export function success(...args) {
   console.log(...args.map(arg => chalk.green(arg)));
 }
 
-function info(...args) {
+export function info(...args) {
   console.info(...args.map(arg => chalk.blue(arg)));
 }
 
-function error(...args) {
+export function error(...args) {
   console.error(...args.map(arg => chalk.red(arg)));
 }
 
-function warn(...args) {
+export function warn(...args) {
   console.warn(...args.map(arg => chalk.yellow(arg)));
 }
 
-function debug(...args) {
+export function debug(...args) {
   console.log(...args);
+}
+
+export function logBuffer(buffer) {
+  console.log(
+    Array.from(buffer.values())
+      .reduce((string, item) => `${string} ${item.toString(16)}`, '')
+      .slice(1)
+  );
 }

@@ -1,15 +1,19 @@
 {
   "name": "push-receiver",
   "version": "1.0.0",
-  "description": "A library to subscribe to GCM/FCM and receive notifications within a node process..",
+  "description":
+    "A library to subscribe to GCM/FCM and receive notifications within a node process..",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/",
-    "register": "node src/register/",
+    "start": "node index.js",
+    "register": "node scripts/register",
+    "send": "node scripts/send",
     "test": "jest --notify --coverage",
     "test:watch": "jest --notify --coverage --watch",
-    "pretty": "prettier-eslint --single-quote --trailing-comma es5 --write \"**/*.js\" \"**/*.json\"",
-    "pretty:check": "prettier-eslint --single-quote --trailing-comma es5 --list-different --log-level silent \"**/*.js\" \"**/*.json\"",
+    "pretty":
+      "prettier-eslint --single-quote --trailing-comma es5 --write \"**/*.js\" \"**/*.json\"",
+    "pretty:check":
+      "prettier-eslint --single-quote --trailing-comma es5 --list-different --log-level silent \"**/*.js\" \"**/*.json\"",
     "lint": "eslint 'src/**/*.js'",
     "lint:fix": "eslint 'src/**/*.js' --fix"
   },
@@ -41,10 +45,12 @@
     "prettier-eslint-cli": "^4.3.0"
   },
   "dependencies": {
+    "@std/esm": "^0.12.2",
     "chalk": "^2.1.0",
     "crypto-random-string": "^1.0.0",
     "express": "^4.16.2",
     "http-proxy": "^1.16.2",
+    "http_ece": "^1.0.5",
     "long": "^3.2.0",
     "protobufjs": "^6.8.0",
     "request": "^2.81.0",

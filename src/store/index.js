@@ -1,23 +1,17 @@
-const path = require('path');
-const fs = require('fs');
+import path from 'path';
+import fs from 'fs';
 
 const DB = path.join(__dirname, 'storage.json');
 
-module.exports = {
-  saveFCM,
-  saveGCM,
-  saveKeys,
-};
-
-function saveFCM(fcm) {
+export function saveFCM(fcm) {
   return updateDB('fcm', fcm);
 }
 
-function saveGCM(gcm) {
+export function saveGCM(gcm) {
   return updateDB('gcm', gcm);
 }
 
-function saveKeys(keys) {
+export function saveKeys(keys) {
   return updateDB('keys', keys);
 }
 

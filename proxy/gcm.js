@@ -63,7 +63,7 @@ loadProtoFile()
 
 function loadProtoFile() {
   return protobuf.load(
-    path.join(__dirname, '..', 'src', 'register', 'gcm', 'checkin.proto')
+    path.join(__dirname, '..', 'src', 'gcm', 'checkin.proto')
   );
 }
 

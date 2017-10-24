@@ -1,23 +1,25 @@
-const path = require('path');
-const protobuf = require('protobufjs');
-const Long = require('long');
-const socketConnect = require('./socket');
+import path from 'path';
+import protobuf from 'protobufjs';
+import Long from 'long';
+import socketConnect from './socket';
 
-module.exports = connect;
-
-async function connect({ androidId, securityToken, versionInfo }) {
+export default async function connect(gcmParams) {
   const proto = await loadProtoFile();
-  const result = await login(androidId, securityToken, versionInfo, proto);
-  return result;
+  return login(gcmParams, proto);
 }
 
 function loadProtoFile() {
   return protobuf.load(path.join(__dirname, 'mcs.proto'));
 }
 
-function login(androidId, securityToken, versionInfo, proto) {
+function login({ androidId, securityToken, persistentId }, proto) {
   const LoginRequestType = proto.lookupType('mcs_proto.LoginRequest');
+  const DataMessageStanza = proto.lookupType('mcs_proto.DataMessageStanza');
   const hexAndroidId = Long.fromString(androidId).toString(16);
+  const receivedPersistentId = [];
+  if (persistentId) {
+    receivedPersistentId.push(persistentId);
+  }
   const loginRequest = {
     adaptiveHeartbeat    : false,
     authService          : 2,
@@ -31,12 +33,13 @@ function login(androidId, securityToken, versionInfo, proto) {
     useRmq2              : true,
     setting              : [{ name : 'new_vc', value : '1' }],
     // Id of the last notification received
-    receivedPersistentId : [],
     clientEvent          : [],
+    receivedPersistentId : [],
   };
   return socketConnect(
     loginRequest,
     LoginRequestType,
-    Buffer.from([41, 2, 149, 1])
+    Buffer.from([41, 2, 149, 1]),
+    DataMessageStanza
   );
 }
