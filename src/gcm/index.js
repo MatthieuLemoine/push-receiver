@@ -2,7 +2,6 @@ import path from 'path';
 import request from 'request-promise';
 import protobuf from 'protobufjs';
 import Long from 'long';
-import { warn } from '../logger';
 import { resolveTimeout } from '../utils/timeout';
 import fcmKey from '../fcm/server-key';
 import { toBase64 } from '../utils/base64';
@@ -48,7 +47,7 @@ export async function checkIn(androidId, securityToken) {
   return object;
 }
 
-async function doRegister({ androidId, securityToken, versionInfo }, appId) {
+async function doRegister({ androidId, securityToken }, appId) {
   const body = {
     app         : 'org.chromium.linux',
     'X-subtype' : appId,
@@ -62,7 +61,6 @@ async function doRegister({ androidId, securityToken, versionInfo }, appId) {
     androidId,
     securityToken,
     appId,
-    versionInfo,
   };
 }
 
@@ -77,11 +75,11 @@ async function postRegister({ androidId, securityToken, body, retry = 0 }) {
     form : body,
   });
   if (response.includes('Error')) {
-    warn(`Register request has failed with ${response}`);
+    console.warn(`Register request has failed with ${response}`);
     if (retry >= 5) {
       throw new Error('GCM register has failed');
     }
-    warn(`Retry... ${retry + 1}`);
+    console.warn(`Retry... ${retry + 1}`);
     await resolveTimeout(1000);
     return postRegister({ androidId, securityToken, body, retry : retry + 1 });
   }

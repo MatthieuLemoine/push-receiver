@@ -1,5 +1,13 @@
 const request = require('request-promise');
+const argv = require('yargs').argv;
 const store = require('../../src/store/storage.json');
+
+const serverKey = argv.serverKey;
+
+if (!serverKey) {
+  console.error('Missing serverKey argument');
+  return;
+}
 
 (async () => {
   try {
@@ -15,7 +23,7 @@ const store = require('../../src/store/storage.json');
         },
       },
       headers : {
-        Authorization : `key=${store.keys.serverKey}`,
+        Authorization : `key=${serverKey}`,
       },
     });
     console.log(response);

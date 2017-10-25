@@ -6,8 +6,8 @@ import { saveKeys, saveFCM } from '../store';
 const FCM_SUBSCRIBE = 'https://fcm.googleapis.com/fcm/connect/subscribe';
 const FCM_ENDPOINT = 'https://fcm.googleapis.com/fcm/send';
 
-export default async function registerFCM({ senderId, token, appId }) {
-  const keys = await createKeys(appId, senderId);
+export default async function registerFCM({ senderId, token }) {
+  const keys = await createKeys();
   await saveKeys(keys);
   const response = await request({
     url     : FCM_SUBSCRIBE,
@@ -31,7 +31,7 @@ export default async function registerFCM({ senderId, token, appId }) {
   return saveFCM(JSON.parse(response));
 }
 
-function createKeys(appId, authorizedEntity) {
+function createKeys() {
   return new Promise((resolve, reject) => {
     const dh = crypto.createECDH('prime256v1');
     dh.generateKeys();
@@ -43,7 +43,6 @@ function createKeys(appId, authorizedEntity) {
         privateKey : escape(dh.getPrivateKey('base64')),
         publicKey  : escape(dh.getPublicKey('base64')),
         authSecret : escape(buf.toString('base64')),
-        authorizedEntity,
       });
     });
   });

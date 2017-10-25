@@ -1,6 +1,5 @@
 import tls from 'tls';
 import EventEmitter from 'events';
-import { warn, info } from '../../logger';
 import decrypt from '../../utils/decrypt';
 import { saveGCM } from '../../store';
 
@@ -51,7 +50,7 @@ function listen(socket, NotificationSchema) {
   socket.on('error', error => {
     throw new Error(error);
   });
-  socket.on('end', () => warn('Socket ended'));
+  socket.on('end', () => console.warn('Socket ended'));
 }
 
 function toProtoBuf(payload, Type) {
@@ -73,7 +72,7 @@ function onMessageReceived(buffer, NotificationSchema) {
     );
     const message = decrypt(object);
     if (message) {
-      info('*** Notification received ***');
+      console.log('*** Notification received ***');
       console.log(message);
       // Update last notification id
       saveGCM({ persistentId : object.persistentId });

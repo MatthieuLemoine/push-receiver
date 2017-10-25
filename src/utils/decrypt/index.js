@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import ece from 'http_ece';
-import { error } from '../../logger';
 import storage from '../../store/storage.json';
 
 // https://tools.ietf.org/html/draft-ietf-webpush-encryption-03
@@ -25,7 +24,7 @@ export default function decrypt(object) {
       const decrypted = ece.decrypt(object.rawData, params);
       return JSON.parse(decrypted);
     } catch (e) {
-      error('Error while decrypting incoming message');
+      console.error('Error while decrypting incoming message');
       console.error(e);
       return;
     }

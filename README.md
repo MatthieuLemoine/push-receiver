@@ -39,7 +39,7 @@ npm start
 - Send a test notification
 
 `
-npm run send
+npm run send -- --serverKey="<FIREBASE_SERVER_KEY>"
 `
 
 ## Features
@@ -48,3 +48,8 @@ npm run send
 - [x] Register to FCM
 - [x] Listen for notifications
 - [ ] Lib usage
+
+## Requirements
+
+- Firebase sender id to receive notification
+- Firebase serverKey to send notification

@@ -1,6 +1,8 @@
-# Dependency directory
 node_modules
-
-# Generated ressources
+.DS_Store
+npm-debug.log
 coverage
 *.pem
+storage.json
+web/
+.esm-cache
