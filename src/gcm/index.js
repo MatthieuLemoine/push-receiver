@@ -1,11 +1,10 @@
-import path from 'path';
-import request from 'request-promise';
-import protobuf from 'protobufjs';
-import Long from 'long';
-import { resolveTimeout } from '../utils/timeout';
-import fcmKey from '../fcm/server-key';
-import { toBase64 } from '../utils/base64';
-import { saveGCM } from '../store';
+const path = require('path');
+const request = require('request-promise');
+const protobuf = require('protobufjs');
+const Long = require('long');
+const { resolveTimeout } = require('../utils/timeout');
+const fcmKey = require('../fcm/server-key');
+const { toBase64 } = require('../utils/base64');
 
 const serverKey = toBase64(Buffer.from(fcmKey));
 
@@ -15,14 +14,18 @@ const CHECKIN_URL = 'https://android.clients.google.com/checkin';
 let root;
 let AndroidCheckinResponse;
 
-export async function register(appId) {
+module.exports = {
+  register,
+  checkIn,
+};
+
+async function register(appId) {
   const options = await checkIn();
   const credentials = await doRegister(options, appId);
-  await saveGCM(credentials);
   return credentials;
 }
 
-export async function checkIn(androidId, securityToken) {
+async function checkIn(androidId, securityToken) {
   await loadProtoFile();
   const buffer = getCheckinRequest(androidId, securityToken);
   const body = await request({
@@ -39,10 +42,6 @@ export async function checkIn(androidId, securityToken) {
     longs : String,
     enums : String,
     bytes : String,
-  });
-  await saveGCM({
-    androidId     : object.androidId,
-    securityToken : object.securityToken,
   });
   return object;
 }

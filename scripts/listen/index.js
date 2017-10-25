@@ -1,6 +1,4 @@
-// eslint-disable-next-line
-require = require('@std/esm')(module, { cjs: true, esm: 'js' });
-const listen = require('../../src').listen;
+const { listen } = require('../../src');
 
 (async () => {
   try {

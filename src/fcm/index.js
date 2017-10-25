@@ -1,14 +1,14 @@
-import crypto from 'crypto';
-import request from 'request-promise';
-import { escape } from '../utils/base64';
-import { saveKeys, saveFCM } from '../store';
+const crypto = require('crypto');
+const request = require('request-promise');
+const { escape } = require('../utils/base64');
 
 const FCM_SUBSCRIBE = 'https://fcm.googleapis.com/fcm/connect/subscribe';
 const FCM_ENDPOINT = 'https://fcm.googleapis.com/fcm/send';
 
-export default async function registerFCM({ senderId, token }) {
+module.exports = registerFCM;
+
+async function registerFCM({ senderId, token }) {
   const keys = await createKeys();
-  await saveKeys(keys);
   const response = await request({
     url     : FCM_SUBSCRIBE,
     method  : 'POST',
@@ -28,7 +28,10 @@ export default async function registerFCM({ senderId, token }) {
         .replace(/\//g, '_'),
     },
   });
-  return saveFCM(JSON.parse(response));
+  return {
+    keys,
+    fcm : JSON.parse(response),
+  };
 }
 
 function createKeys() {

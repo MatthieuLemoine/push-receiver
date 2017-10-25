@@ -1,18 +1,20 @@
-import path from 'path';
-import protobuf from 'protobufjs';
-import Long from 'long';
-import socketConnect from './socket';
+const path = require('path');
+const protobuf = require('protobufjs');
+const Long = require('long');
+const { connect: socketConnect } = require('./socket');
 
-export default async function connect(gcmParams) {
+module.exports = connect;
+
+async function connect(gcmParams, keys, persistentId) {
   const proto = await loadProtoFile();
-  return login(gcmParams, proto);
+  return login(gcmParams, proto, keys, persistentId);
 }
 
 function loadProtoFile() {
   return protobuf.load(path.join(__dirname, 'mcs.proto'));
 }
 
-function login({ androidId, securityToken, persistentId }, proto) {
+function login({ androidId, securityToken }, proto, keys, persistentId) {
   const LoginRequestType = proto.lookupType('mcs_proto.LoginRequest');
   const DataMessageStanza = proto.lookupType('mcs_proto.DataMessageStanza');
   const hexAndroidId = Long.fromString(androidId).toString(16);
@@ -40,6 +42,7 @@ function login({ androidId, securityToken, persistentId }, proto) {
     loginRequest,
     LoginRequestType,
     Buffer.from([41, 2, 149, 1]),
-    DataMessageStanza
+    DataMessageStanza,
+    keys
   );
 }

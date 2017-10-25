@@ -1,9 +1,10 @@
-import crypto from 'crypto';
-import ece from 'http_ece';
-import storage from '../../store/storage.json';
+const crypto = require('crypto');
+const ece = require('http_ece');
+
+module.exports = decrypt;
 
 // https://tools.ietf.org/html/draft-ietf-webpush-encryption-03
-export default function decrypt(object) {
+function decrypt(object, keys) {
   try {
     const cryptoKey = object.appData
       .find(item => item.key === 'crypto-key')
@@ -12,10 +13,10 @@ export default function decrypt(object) {
       .find(item => item.key === 'encryption')
       .value.slice(5);
     const dh = crypto.createECDH('prime256v1');
-    dh.setPrivateKey(storage.keys.privateKey, 'base64');
+    dh.setPrivateKey(keys.privateKey, 'base64');
     const params = {
       version    : 'aesgcm',
-      authSecret : storage.keys.authSecret,
+      authSecret : keys.authSecret,
       dh         : cryptoKey,
       privateKey : dh,
       salt,

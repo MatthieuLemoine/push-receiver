@@ -2,17 +2,17 @@
 
 A library to subscribe to GCM/FCM and receive notifications within a node process.
 
-:construction: WIP !!! Not ready yet ! :warning:
+For [electron](https://github.com/electron/electron), you can use [electron-push-receiver](https://github.com/MatthieuLemoine/electron-push-receiver) instead which provides a convenient wrapper.
 
 ## When should I use `push-receiver` ?
 
-- I want to **receive** push notifications sent using Firebase Cloud Messaging in a [electron](https://github.com/electron/electron) desktop application.
+- I want to **receive** push notifications sent using Firebase Cloud Messaging in an [electron](https://github.com/electron/electron) desktop application.
 - I want to communicate with a node process/server using Firebase Cloud Messaging infrastructure.
 
 ## When should I not use `push-receiver` ?
 
 - I want to **send** push notifications (use the firebase SDK instead)
-- your application is running on a FCM supported platform (Android, iOS, Web).
+- My application is running on a FCM supported platform (Android, iOS, Web).
 
 ## Install
 
@@ -20,36 +20,49 @@ A library to subscribe to GCM/FCM and receive notifications within a node proces
 npm i -S push-receiver
 `
 
-## Usage
-
-- Register to GCM/FCM (should be run only once)
-
-`
-npm run register
-`
-
-The register command will store the GCM/FCM credentials in `src/store/storage.json`. To send notifications, to the `push-service` instance, use the `fcm.token` token.
-
-- Listen for notifications
-
-`
-npm start
-`
-
-- Send a test notification
-
-`
-npm run send -- --serverKey="<FIREBASE_SERVER_KEY>"
-`
-
-## Features
-
-- [x] Register to GCM
-- [x] Register to FCM
-- [x] Listen for notifications
-- [ ] Lib usage
-
 ## Requirements
 
+- Node v8 (async/await support)
 - Firebase sender id to receive notification
-- Firebase serverKey to send notification
+- Firebase serverKey to send notification (optional)
+
+## Usage
+
+### Electron
+
+You can use [electron-push-receiver](https://github.com/MatthieuLemoine/electron-push-receiver) instead which provides a convenient wrapper.
+
+### Node
+
+```javascript
+const { register, listen } = require('push-receiver');
+
+// First time
+// Register to GCM and FCM
+const credentials = await register(senderId); // You should call register only once and the store the credentials somewhere
+storeCredentials(credentials) // Store credentials to use it later
+const fcmToken = credentials.fcm.token; // Token to use to send notifications
+sendTokenToBackendOrWhatever(fcmToken);
+
+
+// Next times
+const credentials = getSavedCredentials() // get your saved credentials from somewhere (file, db, etc...)
+// persistentId is the id of the last notification received to avoid receiving all already received notifications on start.
+const persistentId = getPersistentId() // get your last persistentId from somewhere (file, db, etc...), can be null
+await listen({ ...credentials, persistentId}, onNotification);
+
+// Called on new notification
+function onNotification({ notification, persistentId : newPersistentId }) {
+  savePersistentId(newPersistentId);
+  // Do someting with the notification
+  display(notification)
+}
+```
+
+### Test notification
+
+To test, you can use the [send script](scripts/send/index.js) provided in this repo, you need to pass your serverKey and the FCM token as arguments :
+
+```
+node scripts/send --serverKey="<FIREBASE_SERVER_KEY>" --token="<FIREBASE_TOKEN>"
+```

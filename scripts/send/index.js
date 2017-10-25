@@ -1,11 +1,16 @@
 const request = require('request-promise');
 const argv = require('yargs').argv;
-const store = require('../../src/store/storage.json');
 
 const serverKey = argv.serverKey;
+const token = argv.token;
 
 if (!serverKey) {
   console.error('Missing serverKey argument');
+  return;
+}
+
+if (!token) {
+  console.error('Missing token argument');
   return;
 }
 
@@ -16,7 +21,7 @@ if (!serverKey) {
       url    : 'https://fcm.googleapis.com/fcm/send',
       json   : true,
       body   : {
-        to           : store.fcm.token,
+        to           : token,
         notification : {
           title : 'Hello world',
           body  : 'Test',

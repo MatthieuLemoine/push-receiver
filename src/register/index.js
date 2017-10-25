@@ -1,10 +1,18 @@
-import uuidv4 from 'uuid/v4';
-import { register as registerGCM } from '../gcm';
-import registerFCM from '../fcm';
+const uuidv4 = require('uuid/v4');
+const { register: registerGCM } = require('../gcm');
+const registerFCM = require('../fcm');
 
-export default async function register(senderId) {
+module.exports = register;
+
+async function register(senderId) {
   // Should be unique by app - One GCM registration/token by app/appId
   const appId = `wp:receiver.push.com#${uuidv4()}`;
   const subscription = await registerGCM(appId);
-  await registerFCM({ token : subscription.token, senderId, appId });
+  const result = await registerFCM({
+    token : subscription.token,
+    senderId,
+    appId,
+  });
+  // Need to be saved by the client
+  return Object.assign({}, result, { gcm : subscription });
 }

@@ -1,10 +1,10 @@
-// eslint-disable-next-line
-require = require('@std/esm')(module, { cjs: true, esm: 'js' });
-const register = require('../../src').register;
-const storage = require('../../src/store/storage.json');
+const { register } = require('../../src');
+const senderId = require('yargs').argv.senderId;
 
-// FIREBASE senderId link to your project
-const senderId = storage.fcm.senderId;
+if (!senderId) {
+  console.error('Missing senderId');
+  return;
+}
 
 (async () => {
   try {
