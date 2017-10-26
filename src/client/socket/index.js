@@ -20,7 +20,8 @@ async function connect(
   RequestType,
   preBuffer,
   NotificationSchema,
-  keys
+  keys,
+  persistentIds
 ) {
   const socket = await connectSocket();
   // Payload to send to login with MCS server
@@ -29,7 +30,7 @@ async function connect(
     Buffer.concat([preBuffer, buffer], preBuffer.length + buffer.length)
   );
   // Listen for incoming messages
-  return listen(socket, NotificationSchema, keys);
+  return listen(socket, NotificationSchema, keys, persistentIds);
 }
 
 function connectSocket() {
@@ -47,9 +48,9 @@ function connectSocket() {
   });
 }
 
-function listen(socket, NotificationSchema, keys) {
+function listen(socket, NotificationSchema, keys, persistentIds) {
   socket.on('data', buffer =>
-    onMessageReceived(buffer, NotificationSchema, keys)
+    onMessageReceived(buffer, NotificationSchema, keys, persistentIds)
   );
   socket.on('error', error => {
     throw new Error(error);
@@ -64,7 +65,7 @@ function toProtoBuf(payload, Type) {
   return Type.encode(message).finish();
 }
 
-function onMessageReceived(buffer, NotificationSchema, keys) {
+function onMessageReceived(buffer, NotificationSchema, keys, persistentIds) {
   try {
     const object = NotificationSchema.toObject(
       NotificationSchema.decode(buffer),
@@ -74,6 +75,10 @@ function onMessageReceived(buffer, NotificationSchema, keys) {
         bytes : Buffer,
       }
     );
+    // Already received
+    if (persistentIds.includes(object.persistentId)) {
+      return;
+    }
     const message = decrypt(object, keys);
     if (message) {
       // Send notification

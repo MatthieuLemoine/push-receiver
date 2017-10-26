@@ -32,5 +32,5 @@ async function listen(credentials, notificationCallback) {
   }
   await checkIn(credentials.gcm.androidId, credentials.gcm.securityToken);
   emitter.on(ON_NOTIFICATION_RECEIVED, notificationCallback);
-  await connect(credentials.gcm, credentials.keys, credentials.persistentId);
+  await connect(credentials.gcm, credentials.keys, credentials.persistentIds);
 }

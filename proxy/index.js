@@ -2,7 +2,6 @@ const tls = require('tls');
 const fs = require('fs');
 const path = require('path');
 const protobuf = require('protobufjs');
-const { warn, info } = require('../src/logger');
 
 const mtalkOptions = {
   key  : fs.readFileSync(path.join(__dirname, 'key.pem')),
@@ -11,17 +10,17 @@ const mtalkOptions = {
 let root;
 
 const server = tls.createServer(mtalkOptions, socket => {
-  info('socket connected');
+  console.info('socket connected');
   const proxySocket = new tls.TLSSocket();
   let connected = false;
   socket.on('data', data => {
-    info('SOCKET DATA :');
+    console.info('SOCKET DATA :');
     try {
       const LoginRequestType = root.lookupType('mcs_proto.LoginRequest');
       console.log(LoginRequestType.decode(data));
     } catch (e) {}
     logBuffer(data);
-    info('*******');
+    console.info('*******');
     if (connected) {
       proxySocket.write(data);
     } else {
@@ -38,26 +37,26 @@ const server = tls.createServer(mtalkOptions, socket => {
     }
   });
   socket.on('error', error => {
-    info('Error');
-    info(error);
+    console.info('Error');
+    console.info(error);
   });
   socket.on('end', () => {
-    info('end');
+    console.info('end');
     proxySocket.end();
   });
-  proxySocket.on('close', () => warn('Socket closed'));
+  proxySocket.on('close', () => console.warn('Socket closed'));
   proxySocket.on('data', buffer => {
-    warn('PROXY DATA :');
+    console.warn('PROXY DATA :');
     logBuffer(buffer);
-    warn('*******');
+    console.warn('*******');
     socket.write(buffer);
   });
   proxySocket.on('error', err => {
-    warn('proxy error');
-    warn(err);
+    console.warn('proxy error');
+    console.warn(err);
   });
   proxySocket.on('end', () => {
-    warn('proxy end');
+    console.warn('proxy end');
     socket.end();
   });
 });

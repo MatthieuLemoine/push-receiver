@@ -2,7 +2,7 @@
 
 A library to subscribe to GCM/FCM and receive notifications within a node process.
 
-For [electron](https://github.com/electron/electron), you can use [electron-push-receiver](https://github.com/MatthieuLemoine/electron-push-receiver) instead which provides a convenient wrapper.
+For [Electron](https://github.com/electron/electron), you can use [electron-push-receiver](https://github.com/MatthieuLemoine/electron-push-receiver) instead which provides a convenient wrapper.
 
 ## When should I use `push-receiver` ?
 

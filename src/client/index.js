@@ -5,23 +5,19 @@ const { connect: socketConnect } = require('./socket');
 
 module.exports = connect;
 
-async function connect(gcmParams, keys, persistentId) {
+async function connect(gcmParams, keys, persistentIds) {
   const proto = await loadProtoFile();
-  return login(gcmParams, proto, keys, persistentId);
+  return login(gcmParams, proto, keys, persistentIds);
 }
 
 function loadProtoFile() {
   return protobuf.load(path.join(__dirname, 'mcs.proto'));
 }
 
-function login({ androidId, securityToken }, proto, keys, persistentId) {
+function login({ androidId, securityToken }, proto, keys, persistentIds = []) {
   const LoginRequestType = proto.lookupType('mcs_proto.LoginRequest');
   const DataMessageStanza = proto.lookupType('mcs_proto.DataMessageStanza');
   const hexAndroidId = Long.fromString(androidId).toString(16);
-  const receivedPersistentId = [];
-  if (persistentId) {
-    receivedPersistentId.push(persistentId);
-  }
   const loginRequest = {
     adaptiveHeartbeat    : false,
     authService          : 2,
@@ -36,13 +32,16 @@ function login({ androidId, securityToken }, proto, keys, persistentId) {
     setting              : [{ name : 'new_vc', value : '1' }],
     // Id of the last notification received
     clientEvent          : [],
+    // FIXME Figure out how to pass persistentIds without being kickout by Google
     receivedPersistentId : [],
   };
   return socketConnect(
     loginRequest,
     LoginRequestType,
+    // FIXME Can change depending on persistentIds
     Buffer.from([41, 2, 149, 1]),
     DataMessageStanza,
-    keys
+    keys,
+    persistentIds
   );
 }
