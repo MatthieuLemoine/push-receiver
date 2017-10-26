@@ -47,13 +47,14 @@ sendTokenToBackendOrWhatever(fcmToken);
 
 // Next times
 const credentials = getSavedCredentials() // get your saved credentials from somewhere (file, db, etc...)
-// persistentId is the id of the last notification received to avoid receiving all already received notifications on start.
-const persistentId = getPersistentId() // get your last persistentId from somewhere (file, db, etc...), can be null
-await listen({ ...credentials, persistentId}, onNotification);
+// persistentIds is the list of notification ids received to avoid receiving all already received notifications on start.
+const persistentIds = getPersistentIds() || [] // get your all previous persistentIds sfrom somewhere (file, db, etc...)
+await listen({ ...credentials, persistentIds}, onNotification);
 
 // Called on new notification
-function onNotification({ notification, persistentId : newPersistentId }) {
-  savePersistentId(newPersistentId);
+function onNotification({ notification, persistentId }) {
+  // Update list of persistentId in file/db/...
+  updatePersistentIds([...persistentIds, persistentId]);
   // Do someting with the notification
   display(notification)
 }
