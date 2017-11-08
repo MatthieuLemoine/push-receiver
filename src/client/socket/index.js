@@ -8,6 +8,7 @@ const PORT = 5228;
 const ON_NOTIFICATION_RECEIVED = 'ON_NOTIFICATION_RECEIVED';
 
 const emitter = new EventEmitter();
+let timer;
 
 module.exports = {
   ON_NOTIFICATION_RECEIVED,
@@ -23,7 +24,19 @@ async function connect(
   keys,
   persistentIds
 ) {
-  const socket = await connectSocket();
+  // Retry on disconnect
+  const retry = connect.bind(
+    this,
+    payload,
+    RequestType,
+    preBuffer,
+    NotificationSchema,
+    keys,
+    persistentIds
+  );
+  const socket = await connectSocket(retry);
+  timer = process.hrtime();
+  console.info('MCS client connected');
   // Payload to send to login with MCS server
   const buffer = toProtoBuf(payload, RequestType);
   socket.write(
@@ -33,11 +46,22 @@ async function connect(
   return listen(socket, NotificationSchema, keys, persistentIds);
 }
 
-function connectSocket() {
+function connectSocket(retry) {
   return new Promise(resolve => {
     const socket = new tls.TLSSocket();
     socket.setKeepAlive(true);
-    socket.on('close', () => console.warn('Socket closed'));
+    socket.on('close', () => {
+      const diff = process.hrtime(timer);
+      const minutes = parseInt((diff[0] + diff[1] / 1e9) / 60, 10);
+      console.warn(`MCS socket closed after ${minutes} minutes`);
+      if (minutes < 1) {
+        console.warn('Connection lasted less than 1 minute');
+        console.warn('Giving up...');
+        return;
+      }
+      console.info('Trying to reconnect');
+      retry();
+    });
     socket.connect(
       {
         host : HOST,
@@ -53,9 +77,12 @@ function listen(socket, NotificationSchema, keys, persistentIds) {
     onMessageReceived(buffer, NotificationSchema, keys, persistentIds)
   );
   socket.on('error', error => {
-    throw new Error(error);
+    if (error.code === 'ECONNRESET') {
+      return console.warn('Connection to MCS server lost');
+    }
+    console.error('Error while communicating with MCS server');
+    console.error(error);
   });
-  socket.on('end', () => console.warn('Socket ended'));
 }
 
 function toProtoBuf(payload, Type) {
