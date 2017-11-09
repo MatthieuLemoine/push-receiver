@@ -41,7 +41,7 @@ const { register, listen } = require('push-receiver');
 
 // First time
 // Register to GCM and FCM
-const credentials = await register(senderId); // You should call register only once and the store the credentials somewhere
+const credentials = await register(senderId); // You should call register only once and then store the credentials somewhere
 storeCredentials(credentials) // Store credentials to use it later
 const fcmToken = credentials.fcm.token; // Token to use to send notifications
 sendTokenToBackendOrWhatever(fcmToken);
@@ -50,7 +50,7 @@ sendTokenToBackendOrWhatever(fcmToken);
 // Next times
 const credentials = getSavedCredentials() // get your saved credentials from somewhere (file, db, etc...)
 // persistentIds is the list of notification ids received to avoid receiving all already received notifications on start.
-const persistentIds = getPersistentIds() || [] // get your all previous persistentIds sfrom somewhere (file, db, etc...)
+const persistentIds = getPersistentIds() || [] // get all previous persistentIds from somewhere (file, db, etc...)
 await listen({ ...credentials, persistentIds}, onNotification);
 
 // Called on new notification
