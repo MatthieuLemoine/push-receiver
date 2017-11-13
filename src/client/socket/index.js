@@ -52,13 +52,8 @@ function connectSocket(retry) {
     socket.setKeepAlive(true);
     socket.on('close', () => {
       const diff = process.hrtime(timer);
-      const minutes = parseInt((diff[0] + diff[1] / 1e9) / 60, 10);
+      const minutes = Math.round((diff[0] + diff[1] / 1e9) / 60);
       console.warn(`MCS socket closed after ${minutes} minutes`);
-      if (minutes < 1) {
-        console.warn('Connection lasted less than 1 minute');
-        console.warn('Giving up...');
-        return;
-      }
       console.info('Trying to reconnect');
       retry();
     });
