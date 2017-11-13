@@ -4,6 +4,9 @@ const decrypt = require('../../utils/decrypt');
 
 const HOST = 'mtalk.google.com';
 const PORT = 5228;
+const RETRY_MAX_TEMPO = 15; // time before retrying to open the socket (in seconds)
+let retryCount = 0;         // retries count of opening socket attempts
+
 
 const ON_NOTIFICATION_RECEIVED = 'ON_NOTIFICATION_RECEIVED';
 
@@ -34,7 +37,8 @@ async function connect(
     keys,
     persistentIds
   );
-  const socket = await connectSocket(retry);
+  const socket = await connectSocket(retry, RETRY_MAX_TEMPO);
+  retryCount = 0;
   timer = process.hrtime();
   console.info('MCS client connected');
   // Payload to send to login with MCS server
@@ -46,16 +50,17 @@ async function connect(
   return listen(socket, NotificationSchema, keys, persistentIds);
 }
 
-function connectSocket(retry) {
+function connectSocket(retry, retryMaxTempo) {  
   return new Promise(resolve => {
     const socket = new tls.TLSSocket();
     socket.setKeepAlive(true);
     socket.on('close', () => {
       const diff = process.hrtime(timer);
       const minutes = Math.round((diff[0] + diff[1] / 1e9) / 60);
+      let retryTempo = Math.min((++retryCount), retryMaxTempo);
       console.warn(`MCS socket closed after ${minutes} minutes`);
-      console.info('Trying to reconnect');
-      retry();
+      console.warn(`Trying to reconnect after ${retryTempo} sec`);
+      setTimeout(function(){ retry(); }, (retryTempo*1000));
     });
     socket.connect(
       {
