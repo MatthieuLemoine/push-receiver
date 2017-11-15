@@ -107,6 +107,8 @@ function onMessageReceived(buffer, NotificationSchema, keys, persistentIds) {
     }
     const message = decrypt(object, keys);
     if (message) {
+      // Maintain persistentIds updated with the very last received value
+      persistentIds.push(object.persistentId);
       // Send notification
       emitter.emit(ON_NOTIFICATION_RECEIVED, {
         notification : message,
