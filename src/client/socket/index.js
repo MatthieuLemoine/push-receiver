@@ -59,7 +59,7 @@ function connectSocket(retry, retryCount) {
       const retryTempo = Math.min(retryCount, RETRY_MAX_TEMPO);
       console.warn(`MCS socket closed after ${minutes} minutes`);
       console.warn(`Will try to reconnect in ${retryTempo} seconds`);
-      setTimeout(() => retry(), retryCount * 1000);
+      setTimeout(() => retry(), retryTempo * 1000);
     });
     socket.on('error', error => {
       if (error.code === 'ECONNRESET') {
