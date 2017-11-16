@@ -1,8 +1,8 @@
 const path = require('path');
-const request = require('request-promise');
+const request = require('../utils/request');
 const protobuf = require('protobufjs');
 const Long = require('long');
-const { resolveTimeout } = require('../utils/timeout');
+const { waitFor } = require('../utils/timeout');
 const fcmKey = require('../fcm/server-key');
 const { toBase64 } = require('../utils/base64');
 
@@ -79,7 +79,7 @@ async function postRegister({ androidId, securityToken, body, retry = 0 }) {
       throw new Error('GCM register has failed');
     }
     console.warn(`Retry... ${retry + 1}`);
-    await resolveTimeout(1000);
+    await waitFor(1000);
     return postRegister({ androidId, securityToken, body, retry : retry + 1 });
   }
   return response;
