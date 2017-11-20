@@ -27,7 +27,7 @@ async function connect(
   persistentIds
 ) {
   // Retry on disconnect
-  retry = connect.bind(
+  const retry = connect.bind(
     this,
     payload,
     RequestType,
@@ -44,7 +44,7 @@ async function connect(
   socket.write(
     Buffer.concat([preBuffer, buffer], preBuffer.length + buffer.length)
   );
-  // Listen for incoming messages  
+  // Listen for incoming messages
   return listen(socket, NotificationSchema, keys, persistentIds);
 }
 
@@ -57,7 +57,7 @@ function connectSocket(retryCallback) {
       const minutes = Math.round((diff[0] + diff[1] / 1e9) / 60);
       const retryTempo = Math.min(retryCount++, RETRY_MAX_TEMPO);
       console.warn(`MCS socket closed after ${minutes} minutes`);
-      console.warn(`Will try to reconnect in ${retryTempo}`);
+      console.warn(`Will try to reconnect in ${retryTempo} seconds`);
       setTimeout(() => retryCallback(), retryTempo * 1000);
     });
     socket.on('error', error => {
