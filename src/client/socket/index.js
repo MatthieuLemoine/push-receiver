@@ -48,7 +48,7 @@ async function connect(
   return listen(socket, NotificationSchema, keys, persistentIds);
 }
 
-function connectSocket(retryCallback) {
+function connectSocket(retry) {
   return new Promise(resolve => {
     const socket = new tls.TLSSocket();
     socket.setKeepAlive(true);
@@ -58,7 +58,7 @@ function connectSocket(retryCallback) {
       const retryTempo = Math.min(retryCount++, RETRY_MAX_TEMPO);
       console.warn(`MCS socket closed after ${minutes} minutes`);
       console.warn(`Will try to reconnect in ${retryTempo} seconds`);
-      setTimeout(() => retryCallback(), retryTempo * 1000);
+      setTimeout(() => retry(), retryTempo * 1000);
     });
     socket.on('error', error => {
       if (error.code === 'ECONNRESET') {
