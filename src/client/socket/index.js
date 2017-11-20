@@ -24,7 +24,7 @@ async function connect(
   NotificationSchema,
   keys,
   persistentIds,
-  retryCount = 0,
+  retryCount = 0
 ) {
   // Retry on disconnect
   const retry = connect.bind(
@@ -35,7 +35,7 @@ async function connect(
     NotificationSchema,
     keys,
     persistentIds,
-    retryCount + 1,
+    retryCount + 1
   );
   const socket = await connectSocket(retry, retryCount);
   timer = process.hrtime();
@@ -59,14 +59,25 @@ function connectSocket(retry, retryCount) {
       const retryTempo = Math.min(retryCount, RETRY_MAX_TEMPO);
       console.warn(`MCS socket closed after ${minutes} minutes`);
       console.warn(`Will try to reconnect in ${retryTempo} seconds`);
-      setTimeout(() => retry(), retryCount * 1000);
+      setTimeout(() => retry(), retryTempo * 1000);
+    });
+    socket.on('error', error => {
+      if (error.code === 'ECONNRESET') {
+        return console.warn('Connection to MCS server lost');
+      }
+      console.error('Error while communicating with MCS server');
+      console.error(error);
     });
     socket.connect(
       {
         host : HOST,
         port : PORT,
       },
-      () => resolve(socket)
+      () => {
+        // eslint-disable-next-line no-param-reassign
+        retryCount = 0; // Reset retry count on successful connection
+        resolve(socket);
+      }
     );
   });
 }
@@ -75,13 +86,6 @@ function listen(socket, NotificationSchema, keys, persistentIds) {
   socket.on('data', buffer =>
     onMessageReceived(buffer, NotificationSchema, keys, persistentIds)
   );
-  socket.on('error', error => {
-    if (error.code === 'ECONNRESET') {
-      return console.warn('Connection to MCS server lost');
-    }
-    console.error('Error while communicating with MCS server');
-    console.error(error);
-  });
 }
 
 function toProtoBuf(payload, Type) {
