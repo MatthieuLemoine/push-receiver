@@ -82,9 +82,37 @@ function connectSocket(retry) {
 }
 
 function listen(socket, NotificationSchema, keys, persistentIds) {
-  socket.on('data', buffer =>
-    onMessageReceived(buffer, NotificationSchema, keys, persistentIds)
-  );
+  // TODO(ibash) this is a hack fix for https://github.com/MatthieuLemoine/push-receiver/issues/10
+  //
+  // The issue is that we can't call NotificationSchema.decode until we have all
+  // the bytes for the message. To fix this correctly, we should keep track of
+  // the expected message length and wait until we've received everything before
+  // calling onMessageReceived.
+  //
+  // This hack works by assuming that all the data for a single notification
+  // will be received in short bursts, so if we wait we'll usually get the
+  // correct buffer.
+  //
+  // The correct fix should look like WaitForData in chrome:
+  // https://cs.chromium.org/chromium/src/google_apis/gcm/engine/connection_handler_impl.cc?rcl=dc7c41bc0ee5fee0ed269495dde6b8c40df43e40&l=178
+  let data = null
+  let timeout = null
+
+  socket.on('data', (buffer) => {
+    if (data) {
+      data = Buffer.concat([data, buffer])
+    } else {
+      data = buffer
+    }
+
+    if (!timeout) {
+      timeout = setTimeout(() => {
+        onMessageReceived(data, NotificationSchema, keys, persistentIds)
+        data = null
+        timeout = null
+      }, 200)
+    }
+  });
 }
 
 function toProtoBuf(payload, Type) {
