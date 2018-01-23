@@ -19,9 +19,9 @@ module.exports = {
   checkIn,
 };
 
-async function register(appId) {
+async function register(senderId, appId, appVer, appCert) {
   const options = await checkIn();
-  const credentials = await doRegister(options, appId);
+  const credentials = await doRegister(options, senderId, appId, appVer, appCert);
   return credentials;
 }
 
@@ -46,13 +46,16 @@ async function checkIn(androidId, securityToken) {
   return object;
 }
 
-async function doRegister({ androidId, securityToken }, appId) {
+async function doRegister({ androidId, securityToken }, senderId, appId, appVer, appCert) {
   const body = {
-    app         : 'org.chromium.linux',
-    'X-subtype' : appId,
+    app         : appId,
     device      : androidId,
-    sender      : serverKey,
+    cert        : appCert,
+    app_ver     : appVer,
   };
+
+  [ 'sender', 'X-subtype', 'X-X-subtype', 'X-subscription', 'X-X-subscription' ].forEach( key => body[ key ] = senderId );
+
   const response = await postRegister({ androidId, securityToken, body });
   const token = response.split('=')[1];
   return {
