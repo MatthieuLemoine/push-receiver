@@ -1,11 +1,13 @@
 const tls = require('tls');
 const EventEmitter = require('events');
-const decrypt = require('../../utils/decrypt');
 
+const MCS_VERSION = 41;
 const HOST = 'mtalk.google.com';
 const PORT = 5228;
 const RETRY_MAX_TEMPO = 15; // maximum time before retrying to open the socket (in seconds)
 let retryCount = 0;         // retries count of opening socket attempts
+const STATES = [ 'connecting', 'seenversion', 'loggedin' ];
+let state = STATES[0];
 
 const ON_NOTIFICATION_RECEIVED = 'ON_NOTIFICATION_RECEIVED';
 
@@ -18,34 +20,56 @@ module.exports = {
   emitter,
 };
 
+// Adapted from: https://github.com/chrisdickinson/varint/blob/master/decode.js
+function readVarInt(buf, offset = 0) {
+  const MSB = 0x80;
+  const REST = 0x7F;
+
+  let res    = 0;
+  let shift  = 0;
+  let counter = offset;
+  let byte;
+
+  do {
+    if (counter >= buf.length) {
+      throw new RangeError('Could not decode varint');
+    }
+    byte = buf[counter++];
+    res += shift < 28
+      ? (byte & REST) << shift
+      : (byte & REST) * Math.pow(2, shift);
+    shift += 7;
+  } while (byte >= MSB);
+
+
+  return {
+    value : res,
+    bytes : counter - offset,
+  };
+}
+
 async function connect(
-  payload,
-  RequestType,
-  preBuffer,
-  NotificationSchema,
-  keys,
-  persistentIds
+  loginRequest,
+  protocol
 ) {
   // Retry on disconnect
   const retry = connect.bind(
     this,
-    payload,
-    RequestType,
-    preBuffer,
-    NotificationSchema,
-    keys,
-    persistentIds
+    loginRequest,
+    protocol
   );
   const socket = await connectSocket(retry);
   timer = process.hrtime();
   console.info('MCS client connected');
   // Payload to send to login with MCS server
-  const buffer = toProtoBuf(payload, RequestType);
-  socket.write(
-    Buffer.concat([preBuffer, buffer], preBuffer.length + buffer.length)
-  );
+  const loginTag = protocol.find( tag => tag.name === 'LoginRequest');
+  socket.write( Buffer.from( [
+    MCS_VERSION,
+    loginTag.tag,
+  ] ) );
+  socket.write( loginTag.type.encodeDelimited(loginRequest).finish() );
   // Listen for incoming messages
-  return listen(socket, NotificationSchema, keys, persistentIds);
+  return listen(socket, protocol);
 }
 
 function connectSocket(retry) {
@@ -81,46 +105,54 @@ function connectSocket(retry) {
   });
 }
 
-function listen(socket, NotificationSchema, keys, persistentIds) {
-  socket.on('data', buffer =>
-    onMessageReceived(buffer, NotificationSchema, keys, persistentIds)
-  );
-}
+function listen(socket, protocol) {
+  let prevBuffer = null;
+  socket.on('data', currentBuffer => {
+    const buffer = prevBuffer ? Buffer.concat( [ prevBuffer, currentBuffer ] ) : currentBuffer;
 
-function toProtoBuf(payload, Type) {
-  const errMsg = Type.verify(payload);
-  if (errMsg) throw Error(errMsg);
-  const message = Type.create(payload);
-  return Type.encode(message).finish();
-}
-
-function onMessageReceived(buffer, NotificationSchema, keys, persistentIds) {
-  try {
-    const object = NotificationSchema.toObject(
-      NotificationSchema.decode(buffer),
-      {
-        longs : String,
-        enums : String,
-        bytes : Buffer,
-      }
-    );
-    // Already received
-    if (persistentIds.includes(object.persistentId)) {
+    if (buffer.length === 1 && state === STATES[0]) {
+      state = STATES[1];
       return;
     }
-    const message = decrypt(object, keys);
-    if (message) {
-      // Maintain persistentIds updated with the very last received value
-      persistentIds.push(object.persistentId);
-      // Send notification
-      emitter.emit(ON_NOTIFICATION_RECEIVED, {
-        notification : message,
-        // Need to be saved by the client
-        persistentId : object.persistentId,
-      });
+
+    const tagId = buffer.readUIntBE(0, 1);
+    const sizeVarInt = readVarInt(buffer, 1);
+
+    if ( buffer.length === sizeVarInt.value + 1 + sizeVarInt.bytes ) { // one byte tagId and one or more byte for size varint
+      prevBuffer = null;
+    } else {
+      prevBuffer = buffer;
+      return;
     }
-  } catch (e) {
-    // Not a notification
-    return;
-  }
+
+    const currentTag = protocol.find(tag => tag.tag === tagId);
+
+    if ( ! currentTag ) {
+      console.error('Unable to find tag id ' + tagId);
+      return;
+    }
+
+    try {
+      const msg = currentTag.type.decodeDelimited( buffer.slice(1) );
+
+      console.info( `Recieved ${ currentTag.name }:`, msg );
+
+      if (currentTag.name === 'DataMessageStanza') {
+        onMessageReceived(msg);
+      }
+
+      if (currentTag.name === 'LoginResponse') {
+        //TODO: check actual response
+        state = STATES[2];
+      }
+
+    } catch(e) {
+      console.warn( `Unable to parse tag ${currentTag.name} ${ buffer.toString('hex') } error: ${e}`);
+    }
+  } );
+}
+
+function onMessageReceived(dataMessage) {
+  // Got notification
+  emitter.emit(ON_NOTIFICATION_RECEIVED, dataMessage);
 }
