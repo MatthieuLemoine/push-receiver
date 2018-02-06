@@ -1,5 +1,6 @@
 const tls = require('tls');
 const EventEmitter = require('events');
+const debug = require( 'debug' )( 'push-reciever:socket' );
 
 const MCS_VERSION = 41;
 const HOST = 'mtalk.google.com';
@@ -60,7 +61,8 @@ async function connect(
   );
   const socket = await connectSocket(retry);
   timer = process.hrtime();
-  console.info('MCS client connected');
+  debug( 'MCS socket connected' );
+
   // Payload to send to login with MCS server
   const loginTag = protocol.find( tag => tag.name === 'LoginRequest');
   socket.write( Buffer.from( [
@@ -80,16 +82,17 @@ function connectSocket(retry) {
       const diff = process.hrtime(timer);
       const minutes = Math.round((diff[0] + diff[1] / 1e9) / 60);
       const retryTempo = Math.min(retryCount++, RETRY_MAX_TEMPO);
-      console.warn(`MCS socket closed after ${minutes} minutes`);
-      console.warn(`Will try to reconnect in ${retryTempo} seconds`);
+      debug(`MCS socket closed after ${minutes} minutes`);
+      debug(`Will try to reconnect in ${retryTempo} seconds`);
       setTimeout(() => retry(), retryTempo * 1000);
     });
     socket.on('error', error => {
       if (error.code === 'ECONNRESET') {
-        return console.warn('Connection to MCS server lost');
+        debug('Connection to MCS server lost');
+        return;
       }
-      console.error('Error while communicating with MCS server');
-      console.error(error);
+      debug('Error while communicating with MCS server');
+      debug(error);
     });
     socket.connect(
       {
@@ -128,14 +131,14 @@ function listen(socket, protocol) {
     const currentTag = protocol.find(tag => tag.tag === tagId);
 
     if ( ! currentTag ) {
-      console.error('Unable to find tag id ' + tagId);
+      debug('Unable to find tag id ' + tagId);
       return;
     }
 
     try {
       const msg = currentTag.type.decodeDelimited( buffer.slice(1) );
 
-      console.info( `Recieved ${ currentTag.name }:`, msg );
+      debug( `Recieved ${ currentTag.name }: ${ JSON.stringify( msg ) }` );
 
       if (currentTag.name === 'DataMessageStanza') {
         onMessageReceived(msg);
@@ -147,9 +150,11 @@ function listen(socket, protocol) {
       }
 
     } catch(e) {
-      console.warn( `Unable to parse tag ${currentTag.name} ${ buffer.toString('hex') } error: ${e}`);
+      debug( `Unable to parse tag ${currentTag.name} ${ buffer.toString('hex') } error: ${ e }`);
     }
   } );
+
+  return socket;
 }
 
 function onMessageReceived(dataMessage) {
