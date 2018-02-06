@@ -5,9 +5,9 @@ const { connect: socketConnect } = require('./socket');
 
 module.exports = connect;
 
-async function connect(gcmParams, keys, persistentIds) {
+async function connect(gcmParams, keys, persistentIds, notificationCallback, loginCallback) {
   const proto = await loadProtoFile();
-  return login(gcmParams, proto, keys, persistentIds);
+  return login(gcmParams, proto, keys, persistentIds, notificationCallback, loginCallback);
 }
 
 function loadProtoFile() {
@@ -31,7 +31,7 @@ function getProtocol( proto ) {
   } ) );
 }
 
-function login({ androidId, securityToken }, proto, keys, persistentIds = []) {
+function login({ androidId, securityToken }, proto, keys, persistentIds = [], notificationCallback, loginCallback) {
   const protocol = getProtocol(proto);
 
   const hexAndroidId = Long.fromString(androidId).toString(16);
@@ -55,5 +55,7 @@ function login({ androidId, securityToken }, proto, keys, persistentIds = []) {
   return socketConnect(
     loginRequest,
     protocol,
+    notificationCallback,
+    loginCallback
   );
 }

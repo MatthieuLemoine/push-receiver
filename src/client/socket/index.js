@@ -10,15 +10,10 @@ let retryCount = 0;         // retries count of opening socket attempts
 const STATES = [ 'connecting', 'seenversion', 'loggedin' ];
 let state = STATES[0];
 
-const ON_NOTIFICATION_RECEIVED = 'ON_NOTIFICATION_RECEIVED';
-
-const emitter = new EventEmitter();
 let timer;
 
 module.exports = {
-  ON_NOTIFICATION_RECEIVED,
   connect,
-  emitter,
 };
 
 // Adapted from: https://github.com/chrisdickinson/varint/blob/master/decode.js
@@ -51,13 +46,17 @@ function readVarInt(buf, offset = 0) {
 
 async function connect(
   loginRequest,
-  protocol
+  protocol,
+  notificationCallback,
+  loginCallback,
 ) {
   // Retry on disconnect
   const retry = connect.bind(
     this,
     loginRequest,
-    protocol
+    protocol,
+    notificationCallback,
+    loginCallback,
   );
   const socket = await connectSocket(retry);
   timer = process.hrtime();
@@ -70,8 +69,16 @@ async function connect(
     loginTag.tag,
   ] ) );
   socket.write( loginTag.type.encodeDelimited(loginRequest).finish() );
+
   // Listen for incoming messages
-  return listen(socket, protocol);
+  listen(socket, protocol, notificationCallback, loginCallback);
+
+  return {
+    close : () => {
+      socket._userClose = true;
+      socket.destroy();
+    },
+  };
 }
 
 function connectSocket(retry) {
@@ -83,8 +90,11 @@ function connectSocket(retry) {
       const minutes = Math.round((diff[0] + diff[1] / 1e9) / 60);
       const retryTempo = Math.min(retryCount++, RETRY_MAX_TEMPO);
       debug(`MCS socket closed after ${minutes} minutes`);
-      debug(`Will try to reconnect in ${retryTempo} seconds`);
-      setTimeout(() => retry(), retryTempo * 1000);
+
+      if ( ! socket._userClose ) {
+        debug(`Will try to reconnect in ${retryTempo} seconds`);
+        setTimeout(() => retry(), retryTempo * 1000); 
+      }
     });
     socket.on('error', error => {
       if (error.code === 'ECONNRESET') {
@@ -108,7 +118,7 @@ function connectSocket(retry) {
   });
 }
 
-function listen(socket, protocol) {
+function listen(socket, protocol, notificationCallback, loginCallback) {
   let prevBuffer = null;
   socket.on('data', currentBuffer => {
     const buffer = prevBuffer ? Buffer.concat( [ prevBuffer, currentBuffer ] ) : currentBuffer;
@@ -141,12 +151,17 @@ function listen(socket, protocol) {
       debug( `Recieved ${ currentTag.name }: ${ JSON.stringify( msg ) }` );
 
       if (currentTag.name === 'DataMessageStanza') {
-        onMessageReceived(msg);
+        if ( typeof notificationCallback === 'function' ) {
+          process.nextTick( () => notificationCallback( msg ) );
+        }
       }
 
       if (currentTag.name === 'LoginResponse') {
         //TODO: check actual response
         state = STATES[2];
+        if ( typeof loginCallback === 'function' ) {
+          process.nextTick( () => loginCallback( msg ) );
+        }
       }
 
     } catch(e) {
@@ -155,9 +170,4 @@ function listen(socket, protocol) {
   } );
 
   return socket;
-}
-
-function onMessageReceived(dataMessage) {
-  // Got notification
-  emitter.emit(ON_NOTIFICATION_RECEIVED, dataMessage);
 }
