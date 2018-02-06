@@ -7,7 +7,6 @@ const PORT = 5228;
 const RETRY_MAX_TEMPO = 15; // maximum time before retrying to open the socket (in seconds)
 let retryCount = 0;         // retries count of opening socket attempts
 const STATES = [ 'connecting', 'seenversion', 'loggedin' ];
-let state = STATES[0];
 
 let timer;
 
@@ -119,6 +118,7 @@ function connectSocket(retry) {
 
 function listen(socket, protocol, notificationCallback, loginCallback) {
   let prevBuffer = null;
+  let state = STATES[0];
   socket.on('data', currentBuffer => {
     const buffer = prevBuffer ? Buffer.concat( [ prevBuffer, currentBuffer ] ) : currentBuffer;
 
