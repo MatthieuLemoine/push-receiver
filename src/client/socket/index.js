@@ -1,5 +1,4 @@
 const tls = require('tls');
-const EventEmitter = require('events');
 const debug = require( 'debug' )( 'push-reciever:socket' );
 
 const MCS_VERSION = 41;
@@ -128,24 +127,25 @@ function listen(socket, protocol, notificationCallback, loginCallback) {
       return;
     }
 
-    const tagId = buffer.readUIntBE(0, 1);
-    const sizeVarInt = readVarInt(buffer, 1);
-
-    if ( buffer.length === sizeVarInt.value + 1 + sizeVarInt.bytes ) { // one byte tagId and one or more byte for size varint
-      prevBuffer = null;
-    } else {
-      prevBuffer = buffer;
-      return;
-    }
-
-    const currentTag = protocol.find(tag => tag.tag === tagId);
-
-    if ( ! currentTag ) {
-      debug('Unable to find tag id ' + tagId);
-      return;
-    }
-
     try {
+      const tagId = buffer.readUIntBE(0, 1);
+      const sizeVarInt = readVarInt(buffer, 1);
+
+      if ( buffer.length === sizeVarInt.value + 1 + sizeVarInt.bytes ) { // one byte tagId and one or more byte for size varint
+        prevBuffer = null;
+      } else {
+        prevBuffer = buffer;
+        return;
+      }
+
+      const currentTag = protocol.find(tag => tag.tag === tagId);
+
+      if ( ! currentTag ) {
+        debug('Unable to find tag id ' + tagId);
+        return;
+      }
+
+
       const msg = currentTag.type.decodeDelimited( buffer.slice(1) );
 
       debug( `Recieved ${ currentTag.name }: ${ JSON.stringify( msg ) }` );
@@ -165,7 +165,7 @@ function listen(socket, protocol, notificationCallback, loginCallback) {
       }
 
     } catch(e) {
-      debug( `Unable to parse tag ${currentTag.name} ${ buffer.toString('hex') } error: ${ e }`);
+      debug( `Error processing buffer ${ buffer.toString('hex') } of length: ${ buffer.length } error: ${ e }`);
     }
   } );
 
