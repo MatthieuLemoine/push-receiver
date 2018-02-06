@@ -5,18 +5,35 @@ const { connect: socketConnect } = require('./socket');
 
 module.exports = connect;
 
-async function connect(gcmParams, keys, persistentIds) {
+async function connect(gcmParams, keys, persistentIds, notificationCallback, loginCallback) {
   const proto = await loadProtoFile();
-  return login(gcmParams, proto, keys, persistentIds);
+  return login(gcmParams, proto, keys, persistentIds, notificationCallback, loginCallback);
 }
 
 function loadProtoFile() {
   return protobuf.load(path.join(__dirname, 'mcs.proto'));
 }
 
-function login({ androidId, securityToken }, proto, keys, persistentIds = []) {
-  const LoginRequestType = proto.lookupType('mcs_proto.LoginRequest');
-  const DataMessageStanza = proto.lookupType('mcs_proto.DataMessageStanza');
+function getProtocol( proto ) {
+  const tags = [
+    { tag : 0, name : 'HeartbeatPing' },
+    { tag : 1, name : 'HeartbeatAck' },
+    { tag : 2, name : 'LoginRequest' },
+    { tag : 3, name : 'LoginResponse' },
+    { tag : 4, name : 'Close' },
+    { tag : 7, name : 'IqStanza' },
+    { tag : 8, name : 'DataMessageStanza' },
+  ];
+
+  return tags.map( tagInfo => ( {
+    ...tagInfo,
+    type : proto.lookupType(`mcs_proto.${tagInfo.name}`),
+  } ) );
+}
+
+function login({ androidId, securityToken }, proto, keys, persistentIds = [], notificationCallback, loginCallback) {
+  const protocol = getProtocol(proto);
+
   const hexAndroidId = Long.fromString(androidId).toString(16);
   const loginRequest = {
     adaptiveHeartbeat    : false,
@@ -33,15 +50,12 @@ function login({ androidId, securityToken }, proto, keys, persistentIds = []) {
     // Id of the last notification received
     clientEvent          : [],
     // FIXME Figure out how to pass persistentIds without being kickout by Google
-    receivedPersistentId : [],
+    receivedPersistentId : persistentIds,
   };
   return socketConnect(
     loginRequest,
-    LoginRequestType,
-    // FIXME Can change depending on persistentIds
-    Buffer.from([41, 2, 149, 1]),
-    DataMessageStanza,
-    keys,
-    persistentIds
+    protocol,
+    notificationCallback,
+    loginCallback
   );
 }
