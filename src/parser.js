@@ -1,58 +1,26 @@
 const EventEmitter = require('events');
 const path = require('path');
 const {load, BufferReader} = require('protobufjs');
+const {
+  MCS_VERSION_TAG_AND_SIZE,
+  MCS_TAG_AND_SIZE,
+  MCS_SIZE,
+  MCS_PROTO_BYTES,
 
-// enum ProcessingState
-//
-// Processing the version, tag, and size packets (assuming minimum length
-// size packet). Only used during the login handshake.
-const MCS_VERSION_TAG_AND_SIZE = 0;
-// Processing the tag and size packets (assuming minimum length size
-// packet). Used for normal messages.
-const MCS_TAG_AND_SIZE = 1;
-// Processing the size packet alone.
-const MCS_SIZE = 2;
-// Processing the protocol buffer bytes (for those messages with non-zero
-// sizes).
-const MCS_PROTO_BYTES = 3;
+  kVersionPacketLen,
+  kTagPacketLen,
+  kSizePacketLenMin,
+  kMCSVersion,
 
-// # of bytes a MCS version packet consumes.
-const kVersionPacketLen = 1;
-// # of bytes a tag packet consumes.
-const kTagPacketLen = 1;
-// Max # of bytes a length packet consumes. A Varint32 can consume up to 5 bytes
-// (the msb in each byte is reserved for denoting whether more bytes follow).
-// Although the protocol only allows for 4KiB payloads currently, and the socket
-// stream buffer is only of size 8KiB, it's possible for certain applications to
-// have larger message sizes. When payload is larger than 4KiB, an temporary
-// in-memory buffer is used instead of the normal in-place socket stream buffer.
-const kSizePacketLenMin = 1;
-const kSizePacketLenMax = 5; // eslint-disable-line no-unused-vars
-
-// The current MCS protocol version.
-const kMCSVersion = 41;
-
-// MCS Message tags.
-// WARNING: the order of these tags must remain the same, as the tag values
-// must be consistent with those used on the server.
-// enum MCSProtoTag {
-const kHeartbeatPingTag = 0;
-const kHeartbeatAckTag = 1;
-const kLoginRequestTag = 2;
-const kLoginResponseTag = 3;
-const kCloseTag = 4;
-const kMessageStanzaTag = 5; // eslint-disable-line no-unused-vars
-const kPresenceStanzaTag = 6; // eslint-disable-line no-unused-vars
-const kIqStanzaTag = 7;
-const kDataMessageStanzaTag = 8;
-const kBatchPresenceStanzaTag = 9; // eslint-disable-line no-unused-vars
-const kStreamErrorStanzaTag = 10;
-const kHttpRequestTag = 11; // eslint-disable-line no-unused-vars
-const kHttpResponseTag = 12; // eslint-disable-line no-unused-vars
-const kBindAccountRequestTag = 13; // eslint-disable-line no-unused-vars
-const kBindAccountResponseTag = 14; // eslint-disable-line no-unused-vars
-const kTalkMetadataTag = 15; // eslint-disable-line no-unused-vars
-const kNumProtoTypes = 16; // eslint-disable-line no-unused-vars
+  kHeartbeatPingTag,
+  kHeartbeatAckTag,
+  kLoginRequestTag,
+  kLoginResponseTag,
+  kCloseTag,
+  kIqStanzaTag,
+  kDataMessageStanzaTag,
+  kStreamErrorStanzaTag,
+} = require('./constants');
 
 const DEBUG = () => {};
 // uncomment the line below to output debug messages

@@ -5,6 +5,7 @@ const decrypt = require('./utils/decrypt');
 const path = require('path');
 const tls = require('tls');
 const {checkIn} = require('./gcm');
+const {kMCSVersion, kLoginRequestTag} = require('./constants');
 const {load} = require('protobufjs');
 
 const HOST = 'mtalk.google.com';
@@ -107,10 +108,10 @@ module.exports = class Client extends EventEmitter {
       throw new Error(errorMessage);
     }
     const message = LoginRequestType.create(loginRequest);
-    const buffer = LoginRequestType.encode(message).finish();
+    const buffer = LoginRequestType.encodeDelimited(message).finish();
 
     // FIXME Can change depending on persistentIds
-    return Buffer.concat([Buffer.from([41, 2, 149, 1]), buffer]);
+    return Buffer.concat([Buffer.from([kMCSVersion, kLoginRequestTag]), buffer]);
   }
 
   _onSocketConnect() {
