@@ -33,7 +33,7 @@ let proto = null;
 //
 // The main differences from the chromium implementation are:
 // - Did not use a max packet length (kDefaultDataPacketLimit), instead we just
-//   buffer data in this.data
+//   buffer data in this._data
 // - Error handling around protobufs
 // - Setting timeouts while waiting for data
 //
@@ -48,43 +48,43 @@ module.exports = class Parser extends EventEmitter {
 
   constructor(socket) {
     super();
-    this.socket = socket;
-    this.state = MCS_VERSION_TAG_AND_SIZE;
-    this.data = Buffer.alloc(0);
-    this.sizePacketSoFar = 0;
-    this.messageTag = 0;
-    this.messageSize = 0;
-    this.handshakeComplete = false;
-    this.isWaitingForData = true;
-    this.onData = this.onData.bind(this);
-    this.socket.on('data', this.onData);
+    this._socket = socket;
+    this._state = MCS_VERSION_TAG_AND_SIZE;
+    this._data = Buffer.alloc(0);
+    this._sizePacketSoFar = 0;
+    this._messageTag = 0;
+    this._messageSize = 0;
+    this._handshakeComplete = false;
+    this._isWaitingForData = true;
+    this._onData = this._onData.bind(this);
+    this._socket.on('data', this._onData);
   }
 
   destroy() {
-    this.isWaitingForData = false;
-    this.socket.removeListener('data', this.onData);
+    this._isWaitingForData = false;
+    this._socket.removeListener('data', this._onData);
   }
 
-  emitError(error) {
+  _emitError(error) {
     this.destroy();
     this.emit('error', error);
   }
 
-  onData (buffer) {
+  _onData (buffer) {
     DEBUG(`Got data: ${buffer.length}`);
-    this.data = Buffer.concat([this.data, buffer]);
-    if (this.isWaitingForData) {
-      this.isWaitingForData = false;
-      this.waitForData();
+    this._data = Buffer.concat([this._data, buffer]);
+    if (this._isWaitingForData) {
+      this._isWaitingForData = false;
+      this._waitForData();
     }
   }
 
-  waitForData() {
-    DEBUG(`waitForData state: ${this.state}`);
+  _waitForData() {
+    DEBUG(`waitForData state: ${this._state}`);
 
     let minBytesNeeded = 0;
 
-    switch(this.state) {
+    switch(this._state) {
       case MCS_VERSION_TAG_AND_SIZE:
         minBytesNeeded = kVersionPacketLen + kTagPacketLen + kSizePacketLenMin;
         break;
@@ -92,129 +92,130 @@ module.exports = class Parser extends EventEmitter {
         minBytesNeeded = kTagPacketLen + kSizePacketLenMin;
         break;
       case MCS_SIZE:
-        minBytesNeeded = this.sizePacketSoFar + 1;
+        minBytesNeeded = this._sizePacketSoFar + 1;
         break;
       case MCS_PROTO_BYTES:
-        minBytesNeeded = this.messageSize;
+        minBytesNeeded = this._messageSize;
         break;
       default:
-        this.emitError(new Error(`Unexpected state: ${this.state}`));
+        this._emitError(new Error(`Unexpected state: ${this._state}`));
         return;
     }
 
-    if (this.data.length < minBytesNeeded) {
+    if (this._data.length < minBytesNeeded) {
       // TODO(ibash) set a timeout and check for socket disconnect
-      DEBUG(`Socket read finished prematurely. Waiting for ${minBytesNeeded - this.data.length} more bytes`);
-      this.isWaitingForData = true;
+      DEBUG(`Socket read finished prematurely. Waiting for ${minBytesNeeded - this._data.length} more bytes`);
+      this._isWaitingForData = true;
       return;
     }
 
-    DEBUG(`Processing MCS data: state == ${this.state}`);
+    DEBUG(`Processing MCS data: state == ${this._state}`);
 
-    switch(this.state) {
+    switch(this._state) {
       case MCS_VERSION_TAG_AND_SIZE:
-        this.onGotVersion();
+        this._onGotVersion();
         break;
       case MCS_TAG_AND_SIZE:
-        this.onGotMessageTag();
+        this._onGotMessageTag();
         break;
       case MCS_SIZE:
-        this.onGotMessageSize();
+        this._onGotMessageSize();
         break;
       case MCS_PROTO_BYTES:
-        this.onGotMessageBytes();
+        this._onGotMessageBytes();
         break;
       default:
-        this.emitError(new Error(`Unexpected state: ${this.state}`));
+        this._emitError(new Error(`Unexpected state: ${this._state}`));
         return;
     }
   }
 
-  onGotVersion() {
-    const version = this.data.readInt8(0);
-    this.data = this.data.slice(1);
+  _onGotVersion() {
+    const version = this._data.readInt8(0);
+    this._data = this._data.slice(1);
     DEBUG(`VERSION IS ${version}`);
 
     if (version < kMCSVersion && version !== 38) {
-      this.emitError(new Error(`Got wrong version: ${version}`));
+      this._emitError(new Error(`Got wrong version: ${version}`));
       return;
     }
 
     // Process the LoginResponse message tag.
-    this.onGotMessageTag();
+    this._onGotMessageTag();
   }
 
-  onGotMessageTag() {
-    this.messageTag = this.data.readInt8(0);
-    this.data = this.data.slice(1);
-    DEBUG(`RECEIVED PROTO OF TYPE ${this.messageTag}`);
+  _onGotMessageTag() {
+    this._messageTag = this._data.readInt8(0);
+    this._data = this._data.slice(1);
+    DEBUG(`RECEIVED PROTO OF TYPE ${this._messageTag}`);
 
-    this.onGotMessageSize();
+    this._onGotMessageSize();
   }
 
-  onGotMessageSize() {
+  _onGotMessageSize() {
     let incompleteSizePacket = false;
-    const reader = new BufferReader(this.data);
+    const reader = new BufferReader(this._data);
 
     try {
-      this.messageSize = reader.int32();
+      this._messageSize = reader.int32();
     } catch (error) {
       if (error.message.startsWith('index out of range:')) {
         incompleteSizePacket = true;
       } else {
-        this.emitError(error);
+        this._emitError(error);
+        return
       }
     }
 
     // TODO(ibash) in chromium code there is an extra check here of:
     // if prev_byte_count >= kSizePacketLenMax then something else went wrong
     // NOTE(ibash) I could only test this case by manually cutting the buffer
-    // above to be mid-packet like: new BufferReader(this.data.slice(0, 1))
+    // above to be mid-packet like: new BufferReader(this._data.slice(0, 1))
     if (incompleteSizePacket) {
-      this.sizePacketSoFar = reader.pos;
-      this.state = MCS_SIZE;
-      this.waitForData();
+      this._sizePacketSoFar = reader.pos;
+      this._state = MCS_SIZE;
+      this._waitForData();
       return;
     }
 
-    this.data = this.data.slice(reader.pos);
+    this._data = this._data.slice(reader.pos);
 
-    DEBUG(`Proto size: ${this.messageSize}`);
-    this.sizePacketSoFar = 0;
+    DEBUG(`Proto size: ${this._messageSize}`);
+    this._sizePacketSoFar = 0;
 
-    if (this.messageSize > 0) {
-      this.state = MCS_PROTO_BYTES;
-      this.waitForData();
+    if (this._messageSize > 0) {
+      this._state = MCS_PROTO_BYTES;
+      this._waitForData();
     } else {
-      this.onGotMessageBytes();
+      this._onGotMessageBytes();
     }
   }
 
-  onGotMessageBytes() {
-    const protobuf = this.buildProtobufFromTag(this.messageTag);
+  _onGotMessageBytes() {
+    const protobuf = this._buildProtobufFromTag(this._messageTag);
     if (!protobuf) {
-      this.emitError(new Error('Unknown tag'));
+      this._emitError(new Error('Unknown tag'));
       return;
     }
 
     // Messages with no content are valid; just use the default protobuf for
     // that tag.
-    if (this.messageSize === 0) {
+    if (this._messageSize === 0) {
       this.emit('message', protobuf);
-      this.getNextMessage();
+      this._getNextMessage();
       return;
     }
 
-    if (this.data.length  < this.messageSize) {
+    if (this._data.length < this._messageSize) {
       // Continue reading data.
-      DEBUG(`Continuing data read. Buffer size is ${this.data.length}, expecting ${this.messageSize}`);
-      this.state = MCS_PROTO_BYTES;
-      this.waitForData();
+      DEBUG(`Continuing data read. Buffer size is ${this._data.length}, expecting ${this._messageSize}`);
+      this._state = MCS_PROTO_BYTES;
+      this._waitForData();
       return;
     }
 
-    const buffer = this.data.slice(0, this.messageSize);
-    this.data = this.data.slice(this.messageSize);
+    const buffer = this._data.slice(0, this._messageSize);
+    this._data = this._data.slice(this._messageSize);
     const message = protobuf.decode(buffer);
     const object = protobuf.toObject(message, {
       longs : String,
@@ -223,30 +224,30 @@ module.exports = class Parser extends EventEmitter {
     });
 
     this.emit('message', object);
-    if (this.messageTag === kDataMessageStanzaTag) {
+    if (this._messageTag === kDataMessageStanzaTag) {
       this.emit('dataMessage', object);
     }
 
-    if (this.messageTag === kLoginResponseTag) {
-      if (this.handshakeComplete) {
+    if (this._messageTag === kLoginResponseTag) {
+      if (this._handshakeComplete) {
         console.error('Unexpected login response');
       } else {
-        this.handshakeComplete = true;
+        this._handshakeComplete = true;
         DEBUG('GCM Handshake complete.');
       }
     }
 
-    this.getNextMessage();
+    this._getNextMessage();
   }
 
-  getNextMessage() {
-    this.messageTag = 0;
-    this.messageSize = 0;
-    this.state = MCS_TAG_AND_SIZE;
-    this.waitForData();
+  _getNextMessage() {
+    this._messageTag = 0;
+    this._messageSize = 0;
+    this._state = MCS_TAG_AND_SIZE;
+    this._waitForData();
   }
 
-  buildProtobufFromTag(tag) {
+  _buildProtobufFromTag(tag) {
     switch(tag) {
       case kHeartbeatPingTag:
         return proto.lookupType('mcs_proto.HeartbeatPing');
