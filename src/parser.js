@@ -1,6 +1,6 @@
 const EventEmitter = require('events');
 const path = require('path');
-const {load, BufferReader} = require('protobufjs');
+const { load, BufferReader } = require('protobufjs');
 const {
   MCS_VERSION_TAG_AND_SIZE,
   MCS_TAG_AND_SIZE,
@@ -39,7 +39,7 @@ let proto = null;
 //
 // ref: https://cs.chromium.org/chromium/src/google_apis/gcm/engine/connection_handler_impl.cc?rcl=dc7c41bc0ee5fee0ed269495dde6b8c40df43e40&l=178
 module.exports = class Parser extends EventEmitter {
-  static async init () {
+  static async init() {
     if (proto) {
       return;
     }
@@ -70,7 +70,7 @@ module.exports = class Parser extends EventEmitter {
     this.emit('error', error);
   }
 
-  _onData (buffer) {
+  _onData(buffer) {
     DEBUG(`Got data: ${buffer.length}`);
     this._data = Buffer.concat([this._data, buffer]);
     if (this._isWaitingForData) {
@@ -84,7 +84,7 @@ module.exports = class Parser extends EventEmitter {
 
     let minBytesNeeded = 0;
 
-    switch(this._state) {
+    switch (this._state) {
       case MCS_VERSION_TAG_AND_SIZE:
         minBytesNeeded = kVersionPacketLen + kTagPacketLen + kSizePacketLenMin;
         break;
@@ -104,14 +104,17 @@ module.exports = class Parser extends EventEmitter {
 
     if (this._data.length < minBytesNeeded) {
       // TODO(ibash) set a timeout and check for socket disconnect
-      DEBUG(`Socket read finished prematurely. Waiting for ${minBytesNeeded - this._data.length} more bytes`);
+      DEBUG(
+        `Socket read finished prematurely. Waiting for ${minBytesNeeded -
+          this._data.length} more bytes`
+      );
       this._isWaitingForData = true;
       return;
     }
 
     DEBUG(`Processing MCS data: state == ${this._state}`);
 
-    switch(this._state) {
+    switch (this._state) {
       case MCS_VERSION_TAG_AND_SIZE:
         this._onGotVersion();
         break;
@@ -163,7 +166,7 @@ module.exports = class Parser extends EventEmitter {
         incompleteSizePacket = true;
       } else {
         this._emitError(error);
-        return
+        return;
       }
     }
 
@@ -208,7 +211,11 @@ module.exports = class Parser extends EventEmitter {
 
     if (this._data.length < this._messageSize) {
       // Continue reading data.
-      DEBUG(`Continuing data read. Buffer size is ${this._data.length}, expecting ${this._messageSize}`);
+      DEBUG(
+        `Continuing data read. Buffer size is ${this._data.length}, expecting ${
+          this._messageSize
+        }`
+      );
       this._state = MCS_PROTO_BYTES;
       this._waitForData();
       return;
@@ -248,7 +255,7 @@ module.exports = class Parser extends EventEmitter {
   }
 
   _buildProtobufFromTag(tag) {
-    switch(tag) {
+    switch (tag) {
       case kHeartbeatPingTag:
         return proto.lookupType('mcs_proto.HeartbeatPing');
       case kHeartbeatAckTag:

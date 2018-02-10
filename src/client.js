@@ -4,9 +4,9 @@ const Parser = require('./parser');
 const decrypt = require('./utils/decrypt');
 const path = require('path');
 const tls = require('tls');
-const {checkIn} = require('./gcm');
-const {kMCSVersion, kLoginRequestTag} = require('./constants');
-const {load} = require('protobufjs');
+const { checkIn } = require('./gcm');
+const { kMCSVersion, kLoginRequestTag } = require('./constants');
+const { load } = require('protobufjs');
 
 const HOST = 'mtalk.google.com';
 const PORT = 5228;
@@ -15,7 +15,7 @@ const MAX_RETRY_TIMEOUT = 15;
 let proto = null;
 
 module.exports = class Client extends EventEmitter {
-  static async init () {
+  static async init() {
     if (proto) {
       return;
     }
@@ -39,10 +39,14 @@ module.exports = class Client extends EventEmitter {
     await this._checkIn();
     this._connect();
     // can happen if the socket immediately closes after being created
-    if (!this._socket) { return }
+    if (!this._socket) {
+      return;
+    }
     await Parser.init();
     // can happen if the socket immediately closes after being created
-    if (!this._socket) { return }
+    if (!this._socket) {
+      return;
+    }
     this._parser = new Parser(this._socket);
     this._parser.on('dataMessage', this._onDataMessage);
     this._parser.on('error', this._onParserError);
@@ -53,7 +57,10 @@ module.exports = class Client extends EventEmitter {
   }
 
   async _checkIn() {
-    return checkIn(this._credentials.gcm.androidId, this._credentials.gcm.securityToken);
+    return checkIn(
+      this._credentials.gcm.androidId,
+      this._credentials.gcm.securityToken
+    );
   }
 
   _connect() {
@@ -62,7 +69,7 @@ module.exports = class Client extends EventEmitter {
     this._socket.on('connect', this._onSocketConnect);
     this._socket.on('close', this._onSocketClose);
     this._socket.on('error', this._onSocketError);
-    this._socket.connect({host : HOST, port : PORT});
+    this._socket.connect({ host : HOST, port : PORT });
     this._socket.write(this._loginBuffer());
   }
 
@@ -84,7 +91,9 @@ module.exports = class Client extends EventEmitter {
 
   _loginBuffer() {
     const LoginRequestType = proto.lookupType('mcs_proto.LoginRequest');
-    const hexAndroidId = Long.fromString(this._credentials.gcm.androidId).toString(16);
+    const hexAndroidId = Long.fromString(
+      this._credentials.gcm.androidId
+    ).toString(16);
     const loginRequest = {
       adaptiveHeartbeat    : false,
       authService          : 2,
@@ -96,7 +105,7 @@ module.exports = class Client extends EventEmitter {
       resource             : this._credentials.gcm.androidId,
       user                 : this._credentials.gcm.androidId,
       useRmq2              : true,
-      setting              : [{name : 'new_vc', value : '1'}],
+      setting              : [{ name : 'new_vc', value : '1' }],
       // Id of the last notification received
       clientEvent          : [],
       // FIXME Figure out how to pass persistentIds without being kickout by Google
@@ -111,7 +120,10 @@ module.exports = class Client extends EventEmitter {
     const buffer = LoginRequestType.encodeDelimited(message).finish();
 
     // FIXME Can change depending on persistentIds
-    return Buffer.concat([Buffer.from([kMCSVersion, kLoginRequestTag]), buffer]);
+    return Buffer.concat([
+      Buffer.from([kMCSVersion, kLoginRequestTag]),
+      buffer,
+    ]);
   }
 
   _onSocketConnect() {
