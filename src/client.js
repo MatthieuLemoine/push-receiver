@@ -84,6 +84,7 @@ module.exports = class Client extends EventEmitter {
     }
     if (this._parser) {
       this._parser.removeListener('dataMessage', this._onDataMessage);
+      this._parser.removeListener('error', this._onParserError);
       this._parser.destroy();
       this._parser = null;
     }
