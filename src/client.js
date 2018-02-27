@@ -157,7 +157,21 @@ module.exports = class Client extends EventEmitter {
       return;
     }
 
-    const message = decrypt(object, this._credentials.keys);
+    let message
+    try {
+      message = decrypt(object, this._credentials.keys);
+    } catch (error) {
+      if (error.message.includes('Unsupported state or unable to authenticate data')) {
+        // NOTE(ibash) Periodically we're unable to decrypt notifications. In
+        // all cases we've been able to receive future notifications using the
+        // same keys. So, we sliently drop this notification.
+        this._persistentIds.push(object.persistentId);
+        return
+      } else {
+        throw error
+      }
+    }
+
     // Maintain persistentIds updated with the very last received value
     this._persistentIds.push(object.persistentId);
     // Send notification
