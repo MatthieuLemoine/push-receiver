@@ -14,7 +14,7 @@
       "prettier-eslint --single-quote --trailing-comma es5 --list-different --log-level silent \"**/*.js\" \"**/*.json\"",
     "lint": "eslint 'src/**/*.js'",
     "lint:fix": "eslint 'src/**/*.js' --fix",
-    "test": "jest 'test/**/*.test.js'",
+    "test": "jest",
     "precommit": "lint-staged"
   },
   "lint-staged": {

@@ -5,7 +5,12 @@ const decrypt = require('./utils/decrypt');
 const path = require('path');
 const tls = require('tls');
 const { checkIn } = require('./gcm');
-const { kMCSVersion, kLoginRequestTag, kDataMessageStanzaTag, kLoginResponseTag } = require('./constants');
+const {
+  kMCSVersion,
+  kLoginRequestTag,
+  kDataMessageStanzaTag,
+  kLoginResponseTag,
+} = require('./constants');
 const { load } = require('protobufjs');
 
 const HOST = 'mtalk.google.com';
@@ -116,10 +121,9 @@ module.exports = class Client extends EventEmitter {
     if (errorMessage) {
       throw new Error(errorMessage);
     }
-    const message = LoginRequestType.create(loginRequest);
-    const buffer = LoginRequestType.encodeDelimited(message).finish();
 
-    // FIXME Can change depending on persistentIds
+    const buffer = LoginRequestType.encodeDelimited(loginRequest).finish();
+
     return Buffer.concat([
       Buffer.from([kMCSVersion, kLoginRequestTag]),
       buffer,
@@ -151,13 +155,13 @@ module.exports = class Client extends EventEmitter {
     this._retryTimeout = setTimeout(this.connect.bind(this), timeout);
   }
 
-  _onMessage({tag, object}) {
+  _onMessage({ tag, object }) {
     if (tag === kLoginResponseTag) {
       // clear persistent ids, as we just sent them to the server while logging
       // in
-      this._persistentIds = []
+      this._persistentIds = [];
     } else if (tag === kDataMessageStanzaTag) {
-      this._onDataMessage(object)
+      this._onDataMessage(object);
     }
   }
 
@@ -166,18 +170,22 @@ module.exports = class Client extends EventEmitter {
       return;
     }
 
-    let message
+    let message;
     try {
       message = decrypt(object, this._credentials.keys);
     } catch (error) {
-      if (error.message.includes('Unsupported state or unable to authenticate data')) {
+      if (
+        error.message.includes(
+          'Unsupported state or unable to authenticate data'
+        )
+      ) {
         // NOTE(ibash) Periodically we're unable to decrypt notifications. In
         // all cases we've been able to receive future notifications using the
         // same keys. So, we sliently drop this notification.
         this._persistentIds.push(object.persistentId);
-        return
+        return;
       } else {
-        throw error
+        throw error;
       }
     }
 

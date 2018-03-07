@@ -16,6 +16,7 @@ describe('Parser', function() {
 
   afterEach(async function() {
     client.destroy();
+    credentials = null;
   });
 
   it('should receive a simple notification', async function() {
