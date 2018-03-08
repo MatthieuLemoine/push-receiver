@@ -1,7 +1,5 @@
-const connect = require('./client');
-const { ON_NOTIFICATION_RECEIVED, emitter } = require('./client/socket');
-const { checkIn } = require('./gcm');
 const register = require('./register');
+const Client = require('./client.js');
 
 module.exports = {
   listen,
@@ -30,7 +28,9 @@ async function listen(credentials, notificationCallback) {
   if (!credentials.keys.authSecret) {
     throw new Error('Missing keys.authSecret in credentials');
   }
-  await checkIn(credentials.gcm.androidId, credentials.gcm.securityToken);
-  emitter.on(ON_NOTIFICATION_RECEIVED, notificationCallback);
-  await connect(credentials.gcm, credentials.keys, credentials.persistentIds);
+
+  const client = new Client(credentials, credentials.persistentIds);
+  client.on('ON_NOTIFICATION_RECEIVED', notificationCallback);
+  client.connect();
+  return client;
 }
