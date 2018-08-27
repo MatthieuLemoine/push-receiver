@@ -1,6 +1,6 @@
 {
   "name": "push-receiver",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description":
     "A module to subscribe to GCM/FCM and receive notifications within a node process.",
   "main": "src/index.js",
