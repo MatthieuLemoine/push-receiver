@@ -6,7 +6,8 @@ const { waitFor } = require('../utils/timeout');
 const fcmKey = require('../fcm/server-key');
 const { toBase64 } = require('../utils/base64');
 
-// Hack to fix PHONE_REGISTRATION_ERROR #17 when use webpack 
+// Hack to fix PHONE_REGISTRATION_ERROR #17 when bundled with webpack
+// https://github.com/dcodeIO/protobuf.js#browserify-integration
 protobuf.util.Long = Long
 protobuf.configure()
 
