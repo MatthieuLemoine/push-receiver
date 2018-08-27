@@ -6,6 +6,10 @@ const { waitFor } = require('../utils/timeout');
 const fcmKey = require('../fcm/server-key');
 const { toBase64 } = require('../utils/base64');
 
+// Hack to fix PHONE_REGISTRATION_ERROR #17 when use webpack 
+protobuf.util.Long = Long
+protobuf.configure()
+
 const serverKey = toBase64(Buffer.from(fcmKey));
 
 const REGISTER_URL = 'https://android.clients.google.com/c2dm/register3';
