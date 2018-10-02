@@ -174,18 +174,23 @@ module.exports = class Client extends EventEmitter {
     try {
       message = decrypt(object, this._credentials.keys);
     } catch (error) {
-      if (
-        error.message.includes(
+      switch (true) {
+        case error.message.includes(
           'Unsupported state or unable to authenticate data'
-        )
-      ) {
-        // NOTE(ibash) Periodically we're unable to decrypt notifications. In
-        // all cases we've been able to receive future notifications using the
-        // same keys. So, we sliently drop this notification.
-        this._persistentIds.push(object.persistentId);
-        return;
-      } else {
-        throw error;
+        ):
+        case error.message.includes('crypto-key is missing'):
+        case error.message.includes('salt is missing'):
+          // NOTE(ibash) Periodically we're unable to decrypt notifications. In
+          // all cases we've been able to receive future notifications using the
+          // same keys. So, we silently drop this notification.
+          console.warn(
+            'Message dropped as it could not be decrypted: ' + error.message
+          );
+          this._persistentIds.push(object.persistentId);
+          return;
+        default: {
+          throw error;
+        }
       }
     }
 
