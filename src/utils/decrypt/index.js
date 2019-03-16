@@ -18,7 +18,7 @@ function decrypt(object, keys) {
     authSecret : keys.authSecret,
     dh         : getKeyVal(cryptoKey.value, 'dh'),
     privateKey : dh,
-    salt       : getKeyVal((salt.value, 'salt'),
+    salt       : getKeyVal(salt.value, 'salt'),
   };
   const decrypted = ece.decrypt(object.rawData, params);
   return JSON.parse(decrypted);
