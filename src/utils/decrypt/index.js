@@ -7,6 +7,8 @@ module.exports = decrypt;
 function decrypt(object, keys) {
   const cryptoKey = object.appData.find(item => item.key === 'crypto-key');
   if (!cryptoKey) throw new Error('crypto-key is missing');
+  let getKeyVal = (keyVals, key) => keyVals.includes(key + '=') ?
+    keyVals.split(';').filter(keyVal => keyVal.includes(key + '='))[0].split(/=(.+)/)[1] : '';
   const salt = object.appData.find(item => item.key === 'encryption');
   if (!salt) throw new Error('salt is missing');
   const dh = crypto.createECDH('prime256v1');
@@ -14,9 +16,9 @@ function decrypt(object, keys) {
   const params = {
     version    : 'aesgcm',
     authSecret : keys.authSecret,
-    dh         : cryptoKey.value.slice(3),
+    dh         : getKeyVal(cryptoKey.value, 'dh'),
     privateKey : dh,
-    salt       : salt.value.slice(5),
+    salt       : getKeyVal((salt.value, 'salt'),
   };
   const decrypted = ece.decrypt(object.rawData, params);
   return JSON.parse(decrypted);
