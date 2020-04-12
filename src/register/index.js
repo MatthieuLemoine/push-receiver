@@ -6,11 +6,17 @@ module.exports = register;
 
 async function register(
   senderId,
-  { bundleId } = { bundleId : 'receiver.push.com' }
+  { bundleId, skipFcmRegistration } = {
+    bundleId            : 'receiver.push.com',
+    skipFcmRegistration : false,
+  }
 ) {
   // Should be unique by app - One GCM registration/token by app/appId
   const appId = `wp:${bundleId}#${uuidv4()}`;
   const subscription = await registerGCM(appId);
+  if (skipFcmRegistration) {
+    return { gcm : subscription };
+  }
   const result = await registerFCM({
     token : subscription.token,
     senderId,

@@ -9,6 +9,7 @@ declare module 'push-receiver' {
     senderId: string,
     options?: {
       bundleId?: string,
+      skipFcmRegistration?: boolean,
     },
   ): Promise<Credentials & FcmData>;
 
@@ -16,6 +17,7 @@ declare module 'push-receiver' {
     senderId: string,
     options: {
       bundleId?: string,
+      skipFcmRegistration?: boolean,
     },
   ): Promise<Credentials>;
 
