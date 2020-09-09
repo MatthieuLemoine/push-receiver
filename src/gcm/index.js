@@ -1,10 +1,17 @@
 const path = require('path');
-const request = require('../utils/request');
+const request = require('promise-request-retry');
 const protobuf = require('protobufjs');
 const Long = require('long');
 const { waitFor } = require('../utils/timeout');
 const fcmKey = require('../fcm/server-key');
 const { toBase64 } = require('../utils/base64');
+
+
+const RETRY_DELAY = 500;
+const RETRY_COUNT = 6
+const RETRY_FACOR = 2
+// Delay after each failed step: 1:500, 2:1000, 3:2000, 4:4000, 5:8000 -> max 15,5sec
+
 
 // Hack to fix PHONE_REGISTRATION_ERROR #17 when bundled with webpack
 // https://github.com/dcodeIO/protobuf.js#browserify-integration
@@ -34,14 +41,18 @@ async function checkIn(androidId, securityToken) {
   await loadProtoFile();
   const buffer = getCheckinRequest(androidId, securityToken);
   const body = await request({
-    url     : CHECKIN_URL,
+    uri     : CHECKIN_URL,
     method  : 'POST',
     headers : {
       'Content-Type' : 'application/x-protobuf',
     },
     body     : buffer,
     encoding : null,
+    delay: RETRY_DELAY,
+    factor: RETRY_FACOR,
+    retry: RETRY_COUNT,
   });
+
   const message = AndroidCheckinResponse.decode(body);
   const object = AndroidCheckinResponse.toObject(message, {
     longs : String,
@@ -70,13 +81,16 @@ async function doRegister({ androidId, securityToken }, appId) {
 
 async function postRegister({ androidId, securityToken, body, retry = 0 }) {
   const response = await request({
-    url     : REGISTER_URL,
+    uri     : REGISTER_URL,
     method  : 'POST',
     headers : {
       Authorization  : `AidLogin ${androidId}:${securityToken}`,
       'Content-Type' : 'application/x-www-form-urlencoded',
     },
     form : body,
+    delay: RETRY_DELAY,
+    factor: RETRY_FACOR,
+    retry: RETRY_COUNT,
   });
   if (response.includes('Error')) {
     console.warn(`Register request has failed with ${response}`);
