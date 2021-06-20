@@ -1,4 +1,4 @@
-const request = require('request-promise');
+const axios = require('axios');
 const { waitFor } = require('../timeout');
 
 // In seconds
@@ -14,7 +14,7 @@ function requestWithRety(...args) {
 
 async function retry(retryCount = 0, ...args) {
   try {
-    const result = await request(...args);
+    const result = await axios(...args);
     return result;
   } catch (e) {
     const timeout = Math.min(retryCount * RETRY_STEP, MAX_RETRY_TIMEOUT);

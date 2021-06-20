@@ -1,4 +1,4 @@
-const request = require('request-promise');
+const axios = require('axios');
 const argv = require('yargs').argv;
 
 const serverKey = argv.serverKey;
@@ -16,11 +16,9 @@ if (!token) {
 
 (async () => {
   try {
-    const response = await request({
-      method : 'POST',
-      url    : 'https://fcm.googleapis.com/fcm/send',
-      json   : true,
-      body   : {
+    const response = await axios({
+      url  : 'https://fcm.googleapis.com/fcm/send',
+      data : {
         to           : token,
         notification : {
           title : 'Hello world',
