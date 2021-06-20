@@ -31,7 +31,7 @@ async function registerFCM({ senderId, token }) {
   });
   return {
     keys,
-    fcm : JSON.parse(response),
+    fcm : response.data,
   };
 }
 

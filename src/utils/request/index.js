@@ -15,7 +15,7 @@ function requestWithRety(...args) {
 async function retry(retryCount = 0, ...args) {
   try {
     const result = await axios(...args);
-    return result;
+    return result.data;
   } catch (e) {
     const timeout = Math.min(retryCount * RETRY_STEP, MAX_RETRY_TIMEOUT);
     console.error(`Request failed : ${e.message}`);

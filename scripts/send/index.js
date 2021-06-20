@@ -29,7 +29,7 @@ if (!token) {
         Authorization : `key=${serverKey}`,
       },
     });
-    console.log(response);
+    console.log(response.data);
   } catch (e) {
     console.error(e.message);
   }

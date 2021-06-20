@@ -35,6 +35,7 @@ async function checkIn(androidId, securityToken) {
   await loadProtoFile();
   const buffer = getCheckinRequest(androidId, securityToken);
   const data = await request({
+    responseType: 'arraybuffer',
     url     : CHECKIN_URL,
     method  : 'POST',
     headers : {
@@ -43,7 +44,7 @@ async function checkIn(androidId, securityToken) {
     data     : new Uint8Array(buffer),
     encoding : null,
   });
-  const message = AndroidCheckinResponse.decode(data);
+  const message = AndroidCheckinResponse.decode(Buffer.from(data));
   const object = AndroidCheckinResponse.toObject(message, {
     longs : String,
     enums : String,
