@@ -35,10 +35,10 @@ async function checkIn(androidId, securityToken) {
   await loadProtoFile();
   const buffer = getCheckinRequest(androidId, securityToken);
   const data = await request({
-    responseType: 'arraybuffer',
-    url     : CHECKIN_URL,
-    method  : 'POST',
-    headers : {
+    responseType : 'arraybuffer',
+    url          : CHECKIN_URL,
+    method       : 'POST',
+    headers      : {
       'Content-Type' : 'application/x-protobuf',
     },
     data     : new Uint8Array(buffer),
