@@ -41,8 +41,7 @@ async function checkIn(androidId, securityToken) {
     headers      : {
       'Content-Type' : 'application/x-protobuf',
     },
-    data     : new Uint8Array(buffer),
-    encoding : null,
+    data     : buffer,
   });
   const message = AndroidCheckinResponse.decode(Buffer.from(data));
   const object = AndroidCheckinResponse.toObject(message, {
