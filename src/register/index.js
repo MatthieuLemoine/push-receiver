@@ -4,7 +4,10 @@ const registerFCM = require('../fcm');
 
 module.exports = register;
 
-async function register(senderId, { bundleId } = { bundleId : 'receiver.push.com' }) {
+async function register(
+  senderId,
+  { bundleId } = { bundleId : 'receiver.push.com' }
+) {
   // Should be unique by app - One GCM registration/token by app/appId
   const appId = `wp:${bundleId}#${uuidv4()}`;
   const subscription = await registerGCM(appId);
