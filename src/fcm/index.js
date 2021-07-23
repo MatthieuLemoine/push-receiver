@@ -17,15 +17,9 @@ async function registerFCM({ senderId, token }) {
     },
     form : {
       authorized_entity : senderId,
-      endpoint          : `${FCM_ENDPOINT}/${token}`,
-      encryption_key    : keys.publicKey
-        .replace(/=/g, '')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_'),
-      encryption_auth : keys.authSecret
-        .replace(/=/g, '')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_'),
+      endpoint          : escape(`${FCM_ENDPOINT}/${token}`),
+      encryption_key    : keys.publicKey,
+      encryption_auth   : keys.authSecret,
     },
   });
   return {
