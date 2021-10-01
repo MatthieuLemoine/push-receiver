@@ -136,14 +136,16 @@ module.exports = class Client extends EventEmitter {
   }
 
   _onSocketClose() {
-    this.emit('disconnect')
+    this.emit('disconnect');
     this._retry();
   }
 
+  // eslint-disable-next-line no-unused-vars
   _onSocketError(error) {
     // ignore, the close handler takes care of retry
   }
 
+  // eslint-disable-next-line no-unused-vars
   _onParserError(error) {
     this._retry();
   }

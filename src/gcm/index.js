@@ -8,8 +8,8 @@ const { toBase64 } = require('../utils/base64');
 
 // Hack to fix PHONE_REGISTRATION_ERROR #17 when bundled with webpack
 // https://github.com/dcodeIO/protobuf.js#browserify-integration
-protobuf.util.Long = Long
-protobuf.configure()
+protobuf.util.Long = Long;
+protobuf.configure();
 
 const serverKey = toBase64(Buffer.from(fcmKey));
 
