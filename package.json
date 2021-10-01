@@ -1,17 +1,14 @@
 {
   "name": "push-receiver",
-  "version": "2.1.1",
-  "description":
-    "A module to subscribe to GCM/FCM and receive notifications within a node process.",
+  "version": "2.2.1",
+  "description": "A module to subscribe to GCM/FCM and receive notifications within a node process.",
   "main": "src/index.js",
   "scripts": {
     "start": "node scripts/listen",
     "register": "node scripts/register",
     "send": "node scripts/send",
-    "pretty":
-      "prettier-eslint --single-quote --trailing-comma es5 --write \"**/*.js\" \"**/*.json\"",
-    "pretty:check":
-      "prettier-eslint --single-quote --trailing-comma es5 --list-different --log-level silent \"**/*.js\" \"**/*.json\"",
+    "pretty": "prettier-eslint --single-quote --trailing-comma es5 --write \"**/*.js\" \"**/*.json\"",
+    "pretty:check": "prettier-eslint --single-quote --trailing-comma es5 --list-different --log-level silent \"**/*.js\" \"**/*.json\"",
     "lint": "eslint 'src/**/*.js'",
     "lint:fix": "eslint 'src/**/*.js' --fix",
     "test": "jest",
@@ -22,7 +19,9 @@
       "eslint --fix",
       "prettier-eslint --single-quote --trailing-comma es5 --write"
     ],
-    "*.json": ["prettier-eslint --single-quote --trailing-comma es5 --write"]
+    "*.json": [
+      "prettier-eslint --single-quote --trailing-comma es5 --write"
+    ]
   },
   "repository": {
     "type": "git",
