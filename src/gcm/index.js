@@ -1,5 +1,6 @@
 const path = require('path');
 const request = require('../utils/request');
+const qs = require('querystring');
 const protobuf = require('protobufjs');
 const Long = require('long');
 const { waitFor } = require('../utils/timeout');
@@ -33,16 +34,16 @@ async function register(appId) {
 async function checkIn(androidId, securityToken) {
   await loadProtoFile();
   const buffer = getCheckinRequest(androidId, securityToken);
-  const body = await request({
-    url     : CHECKIN_URL,
-    method  : 'POST',
-    headers : {
+  const data = await request({
+    responseType : 'arraybuffer',
+    url          : CHECKIN_URL,
+    method       : 'POST',
+    headers      : {
       'Content-Type' : 'application/x-protobuf',
     },
-    body     : buffer,
-    encoding : null,
+    data : buffer,
   });
-  const message = AndroidCheckinResponse.decode(body);
+  const message = AndroidCheckinResponse.decode(Buffer.from(data));
   const object = AndroidCheckinResponse.toObject(message, {
     longs : String,
     enums : String,
@@ -52,13 +53,13 @@ async function checkIn(androidId, securityToken) {
 }
 
 async function doRegister({ androidId, securityToken }, appId) {
-  const body = {
+  const data = {
     app         : 'org.chromium.linux',
     'X-subtype' : appId,
     device      : androidId,
     sender      : serverKey,
   };
-  const response = await postRegister({ androidId, securityToken, body });
+  const response = await postRegister({ androidId, securityToken, data });
   const token = response.split('=')[1];
   return {
     token,
@@ -68,7 +69,7 @@ async function doRegister({ androidId, securityToken }, appId) {
   };
 }
 
-async function postRegister({ androidId, securityToken, body, retry = 0 }) {
+async function postRegister({ androidId, securityToken, data, retry = 0 }) {
   const response = await request({
     url     : REGISTER_URL,
     method  : 'POST',
@@ -76,7 +77,7 @@ async function postRegister({ androidId, securityToken, body, retry = 0 }) {
       Authorization  : `AidLogin ${androidId}:${securityToken}`,
       'Content-Type' : 'application/x-www-form-urlencoded',
     },
-    form : body,
+    data : qs.stringify(data),
   });
   if (response.includes('Error')) {
     console.warn(`Register request has failed with ${response}`);
@@ -85,7 +86,7 @@ async function postRegister({ androidId, securityToken, body, retry = 0 }) {
     }
     console.warn(`Retry... ${retry + 1}`);
     await waitFor(1000);
-    return postRegister({ androidId, securityToken, body, retry : retry + 1 });
+    return postRegister({ androidId, securityToken, data, retry : retry + 1 });
   }
   return response;
 }

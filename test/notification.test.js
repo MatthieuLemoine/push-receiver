@@ -1,4 +1,4 @@
-const request = require('request-promise');
+const axios = require('axios');
 const { SENDER_ID, SERVER_KEY } = require('./keys');
 const { register, listen } = require('../src/index');
 
@@ -57,11 +57,11 @@ describe('Parser', function() {
 });
 
 async function send(notification) {
-  const response = await request({
+  const response = await axios({
     method : 'POST',
     url    : 'https://fcm.googleapis.com/fcm/send',
     json   : true,
-    body   : {
+    data   : {
       to           : credentials.fcm.token,
       notification : notification,
     },

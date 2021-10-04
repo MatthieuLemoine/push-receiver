@@ -57,11 +57,11 @@
     "yargs": "^10.0.3"
   },
   "dependencies": {
+    "axios": "^0.21.1",
     "http_ece": "^1.0.5",
     "long": "^3.2.0",
     "protobufjs": "^6.8.0",
-    "request": "^2.81.0",
-    "request-promise": "^4.2.1",
+    "querystring": "^0.2.1",
     "uuid": "^3.1.0"
   }
 }
