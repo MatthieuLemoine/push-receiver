@@ -8,3 +8,5 @@ web/
 .esm-cache
 test/keys.js
 .history
+dist
+src/protos.d.ts

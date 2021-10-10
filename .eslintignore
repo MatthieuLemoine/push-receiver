@@ -6,3 +6,5 @@ coverage
 storage.json
 web/
 .esm-cache
+dist
+src/protos.d.ts

@@ -1,67 +1,67 @@
 {
-  "name": "push-receiver",
-  "version": "2.2.1",
-  "description": "A module to subscribe to GCM/FCM and receive notifications within a node process.",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "node scripts/listen",
-    "register": "node scripts/register",
-    "send": "node scripts/send",
-    "pretty": "prettier-eslint --single-quote --trailing-comma es5 --write \"**/*.js\" \"**/*.json\"",
-    "pretty:check": "prettier-eslint --single-quote --trailing-comma es5 --list-different --log-level silent \"**/*.js\" \"**/*.json\"",
-    "lint": "eslint 'src/**/*.js'",
-    "lint:fix": "eslint 'src/**/*.js' --fix",
-    "test": "jest",
-    "precommit": "lint-staged"
-  },
-  "lint-staged": {
-    "*.js": [
-      "eslint --fix",
-      "prettier-eslint --single-quote --trailing-comma es5 --write"
+    "name": "@eneris/push-receiver",
+    "version": "3.0.0",
+    "description": "A module to subscribe to GCM/FCM and receive notifications within a node process.",
+    "main": "dist/client.js",
+    "types": "dist/client.d.ts",
+    "files": [
+        "dist",
+        "package*",
+        "*.md"
     ],
-    "*.json": [
-      "prettier-eslint --single-quote --trailing-comma es5 --write"
-    ]
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+ssh://git@github.com/MatthieuLemoine/push-receiver.git"
-  },
-  "keywords": [
-    "push",
-    "service",
-    "fcm",
-    "gcm",
-    "notifications",
-    "node",
-    "electron",
-    "receiver"
-  ],
-  "author": "MatthieuLemoine",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/MatthieuLemoine/push-receiver/issues"
-  },
-  "homepage": "https://github.com/MatthieuLemoine/push-receiver#readme",
-  "devDependencies": {
-    "babel-eslint": "^7.2.3",
-    "eslint": "^4.4.1",
-    "eslint-plugin-jest": "^20.0.3",
-    "http-proxy": "^1.16.2",
-    "husky": "^0.14.3",
-    "jest": "^22.2.2",
-    "lint-staged": "^6.1.0",
-    "prettier": "^1.6.1",
-    "prettier-eslint": "^7.0.0",
-    "prettier-eslint-cli": "^4.3.0",
-    "yargs": "^10.0.3"
-  },
-  "dependencies": {
-    "axios": "^0.21.1",
-    "http_ece": "^1.0.5",
-    "long": "^3.2.0",
-    "protobufjs": "^6.8.0",
-    "querystring": "^0.2.1",
-    "uuid": "^3.1.0"
-  }
+    "scripts": {
+        "protos:convert": "yarn pbjs -t static-module --force-long --wrap commonjs -o ./dist/protos.js ./src/protos/*.proto",
+        "protos:ts": "yarn pbts -o ./dist/protos.d.ts ./dist/protos.js",
+        "protos:dev": "yarn pbts -o ./src/protos.d.ts ./dist/protos.js",
+        "protos:build": "yarn protos:convert && yarn protos:ts && yarn protos:dev",
+        "build": "yarn clean && yarn tsc && yarn protos:build",
+        "prepublish": "yarn build",
+        "test": "jest",
+        "lint": "yarn eslint src --ext .ts",
+        "clean": "rm -rf dist",
+        "precommit": "yarn lint && yarn build"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+ssh://git@github.com/eneris/push-receiver.git"
+    },
+    "keywords": [
+        "push",
+        "service",
+        "fcm",
+        "gcm",
+        "notifications",
+        "node",
+        "electron",
+        "receiver"
+    ],
+    "author": "MatthieuLemoine",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/eneris/push-receiver/issues"
+    },
+    "homepage": "https://github.com/eneris/push-receiver#readme",
+    "devDependencies": {
+        "@types/long": "^4.0.1",
+        "@types/node": "^16.10.3",
+        "@types/protobufjs": "^6.0.0",
+        "@typescript-eslint/eslint-plugin": "^4.33.0",
+        "@typescript-eslint/parser": "^4.33.0",
+        "eslint": "^7.32.0",
+        "http-proxy": "^1.16.2",
+        "husky": "^0.14.3",
+        "jest": "^27.2.5",
+        "typescript": "^4.4.3",
+        "yargs": "^17.2.1"
+    },
+    "dependencies": {
+        "axios": "^0.21.1",
+        "http_ece": "^1.0.5",
+        "long": "^3.2.0",
+        "protobufjs": "^6.11.2",
+        "request-promise": "^4.2.6"
+    },
+    "engines": {
+        "node": ">=16"
+    }
 }

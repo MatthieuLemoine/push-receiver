@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "rootDir": "src",
+        "declaration": true,
+        "outDir": "dist",
+        "module": "CommonJS",
+        "target": "ESNext",
+        "moduleResolution": "node",
+        "sourceMap": true,
+        "esModuleInterop": true,
+        "allowSyntheticDefaultImports": true,
+    },
+    "exclude": [
+        "src/protos.d.ts"
+    ]
+}

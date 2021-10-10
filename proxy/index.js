@@ -70,7 +70,7 @@ loadProtoFile()
 
 function loadProtoFile() {
   return protobuf.load(
-    path.join(__dirname, '..', 'src', 'client', 'mcs.proto')
+    path.join(__dirname, '..', 'src', 'protos', 'mcs.proto')
   );
 }
 

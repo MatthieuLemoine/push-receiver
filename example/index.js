@@ -1,25 +1,35 @@
-const { register, listen } = require('../src');
-const senderId = require('yargs').argv.senderId;
+const PushReceiver = require('../dist/client.js').default
+const yargs = require('yargs/yargs')
 
-if (!senderId) {
-  console.error('Missing senderId');
-  return;
+const parsedArgs = yargs(process.argv.slice(2)).argv
+
+if (!parsedArgs.senderId) {
+    console.error('Missing senderId')
+    process.exit(1)
 }
 
-(async () => {
-  // First time
-  // Register to GCM and FCM
-  const credentials = await register(senderId); // You should call register only once and then store the credentials somewhere
-  const fcmToken = credentials.fcm.token; // Token to use to send notifications
-  console.log('Use this following token to send a notification', fcmToken);
-  // persistentIds is the list of notification ids received to avoid receiving all already received notifications on start.
-  const persistentIds = []; // get all previous persistentIds from somewhere (file, db, etc...)
-  await listen({ ...credentials, persistentIds }, onNotification);
-})();
+const main = async () => {
+    const instance = new PushReceiver({
+        logLevel: parsedArgs.logLevel || 'DEBUG',
+        senderId: parsedArgs.senderId,
+        persistentIds: [], // Recover stored ids of all previous notifications
+    })
 
-// Called on new notification
-function onNotification({ notification }) {
-  // Do someting with the notification
-  console.log('Notification received');
-  console.log(notification);
+    const stopListeningToCredentials = instance.onCredentialsChanged(({ oldCredentials, newCredentials }) => {
+        console.log('Client generated new credentials. Save them somewhere! And decide if thing are needed to re-subscribe', newCredentials)
+    })
+
+    const stopListeningToNotifications = instance.onNotification(({ notification }) => {
+        // Do someting with the notification
+        console.log('Notification received', notification)
+    })
+
+    await instance.connect()
+
+    if (parsedArgs.serverKey) {
+        await instance.testMessage(parsedArgs.serverKey)
+    }
 }
+
+main()
+
