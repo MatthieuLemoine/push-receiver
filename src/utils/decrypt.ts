@@ -14,7 +14,7 @@ interface EncryptedMessage {
 }
 
 // https://tools.ietf.org/html/draft-ietf-webpush-encryption-03
-export default function decrypt<T = Types.NotificationEnvelope>(object: EncryptedMessage, keys: Types.Keys): T {
+export default function decrypt<T = Types.MessageEnvelope>(object: EncryptedMessage, keys: Types.Keys): T {
     const cryptoKey = object.appData.find(item => item.key === 'crypto-key')
     if (!cryptoKey) throw new Error('crypto-key is missing')
 

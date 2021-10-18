@@ -53,7 +53,7 @@ export default class PushReceiver extends EventEmitter {
         this.persistentIds = this.config.persistentIds
     }
 
-    public on(event: 'ON_NOTIFICATION_RECEIVED', listener: (data: Types.NotificationEnvelope) => void): this
+    public on(event: 'ON_MESSAGE_RECEIVED', listener: (data: Types.MessageEnvelope) => void): this
     public on(event: 'ON_CREDENTIALS_CHANGE', listener: (data: Types.EventChangeCredentials) => void): this
     public on(event: 'ON_CONNECT', listener: (data: void) => void): this
     public on(event: 'ON_DISCONNECT', listener: (data: void) => void): this
@@ -62,7 +62,7 @@ export default class PushReceiver extends EventEmitter {
         return EventEmitter.prototype.on.apply(this, [event, listener])
     }
 
-    public off(event: 'ON_NOTIFICATION_RECEIVED', listener: (data: Types.NotificationEnvelope) => void): this
+    public off(event: 'ON_MESSAGE_RECEIVED', listener: (data: Types.MessageEnvelope) => void): this
     public off(event: 'ON_CREDENTIALS_CHANGE', listener: (data: Types.EventChangeCredentials) => void): this
     public off(event: 'ON_CONNECT', listener: (data: void) => void): this
     public off(event: 'ON_DISCONNECT', listener: (data: void) => void): this
@@ -71,7 +71,7 @@ export default class PushReceiver extends EventEmitter {
         return EventEmitter.prototype.off.apply(this, [event, listener])
     }
 
-    public emit(event: 'ON_NOTIFICATION_RECEIVED', data: Types.NotificationEnvelope): boolean
+    public emit(event: 'ON_MESSAGE_RECEIVED', data: Types.MessageEnvelope): boolean
     public emit(event: 'ON_CREDENTIALS_CHANGE', data: Types.EventChangeCredentials): boolean
     public emit(event: 'ON_CONNECT'): boolean
     public emit(event: 'ON_DISCONNECT'): boolean
@@ -81,9 +81,9 @@ export default class PushReceiver extends EventEmitter {
         return EventEmitter.prototype.emit.apply(this, [event, ...args])
     }
 
-    public onNotification(listener: (data: Types.NotificationEnvelope) => void): Types.DisposeFunction {
-        this.on('ON_NOTIFICATION_RECEIVED', listener)
-        return () => this.off('ON_NOTIFICATION_RECEIVED', listener)
+    public onNotification(listener: (data: Types.MessageEnvelope) => void): Types.DisposeFunction {
+        this.on('ON_MESSAGE_RECEIVED', listener)
+        return () => this.off('ON_MESSAGE_RECEIVED', listener)
     }
 
     public onCredentialsChanged(listener: (data: Types.EventChangeCredentials) => void): Types.DisposeFunction {
@@ -243,8 +243,8 @@ export default class PushReceiver extends EventEmitter {
         // Maintain persistentIds updated with the very last received value
         this.persistentIds.push(object.persistentId)
         // Send notification
-        this.emit('ON_NOTIFICATION_RECEIVED', {
-            notification: message,
+        this.emit('ON_MESSAGE_RECEIVED', {
+            message,
             // Needs to be saved by the client
             persistentId: object.persistentId,
         })
