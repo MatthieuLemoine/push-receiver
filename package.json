@@ -10,16 +10,17 @@
         "*.md"
     ],
     "scripts": {
-        "protos:convert": "yarn pbjs -t static-module --force-long --wrap commonjs -o ./dist/protos.js ./src/protos/*.proto",
+        "protos:convert": "mkdir -p dist && yarn pbjs -t static-module --force-long --wrap commonjs -o ./dist/protos.js ./src/protos/*.proto",
         "protos:ts": "yarn pbts -o ./dist/protos.d.ts ./dist/protos.js",
         "protos:dev": "yarn pbts -o ./src/protos.d.ts ./dist/protos.js",
         "protos:build": "yarn protos:convert && yarn protos:ts && yarn protos:dev",
-        "build": "yarn clean && yarn tsc && yarn protos:build",
+        "build": "yarn clean && yarn protos:build && yarn tsc",
         "prepublish": "yarn build",
         "test": "jest",
         "lint": "yarn eslint src --ext .ts",
         "clean": "rm -rf dist",
-        "precommit": "yarn lint && yarn build"
+        "precommit": "yarn lint && yarn build",
+        "prepare": "yarn prepublish"
     },
     "repository": {
         "type": "git",
