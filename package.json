@@ -15,7 +15,7 @@
         "protos:dev": "yarn pbts -o ./src/protos.d.ts ./dist/protos.js",
         "protos:build": "yarn protos:convert && yarn protos:ts && yarn protos:dev",
         "build": "yarn clean && yarn protos:build && yarn tsc",
-        "compile": "yarn protos:build && yarn tsc",
+        "compile": "yarn protos:build && yarn tsc --incremental",
         "prepublish": "yarn build",
         "test": "jest",
         "lint": "yarn eslint src --ext .ts",
