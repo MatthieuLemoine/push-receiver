@@ -97,6 +97,8 @@ export default class PushReceiver extends EventEmitter {
     }
 
     public connect = async (): Promise<void> => {
+        if (this.socket) return;
+
         Logger.verbose('connect')
         if (this.config.credentials) {
             Logger.verbose('checkin')
@@ -131,15 +133,18 @@ export default class PushReceiver extends EventEmitter {
     }
 
 
-    private destroy = () => {
+    public destroy = () => {
         clearTimeout(this.retryTimeout)
 
         if (this.socket) {
+            this.socket.off('close', this.handleSocketClose);
+            this.socket.off('error', this.handleSocketError);
             this.socket.destroy()
             this.socket = null
         }
 
         if (this.parser) {
+            this.parser.off('error', this.handleParserError)
             this.parser.destroy()
             this.parser = null
         }
@@ -260,18 +265,13 @@ export default class PushReceiver extends EventEmitter {
         this.socketRetry()
     }
 
-    public testMessage(serverApiKey: string): Promise<void> {
+    public send(message: Types.MessageToSend, serverApiKey: string): Promise<void> {
         Logger.verbose('testMessage')
         if (!serverApiKey) throw new Error('Can\'t test messages without serverApiKey')
 
         const data = {
             time_to_live: 3,
-            data: {
-                message: "PushReceiver test message",
-                title: "testMessage",
-                key: "",
-                action: ""
-            },
+            data: message,
             registration_ids: [this.config.credentials.fcm.token]
         }
 
@@ -287,5 +287,15 @@ export default class PushReceiver extends EventEmitter {
 
             Logger.debug('Message test passed')
         })
+    }
+
+    public testMessage(serverApiKey: string): Promise<void> {
+        Logger.verbose('testMessage')
+        return this.send({
+            message: "PushReceiver test message",
+            title: "testMessage",
+            key: "",
+            action: ""
+        }, serverApiKey);
     }
 }

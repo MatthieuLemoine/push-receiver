@@ -89,3 +89,11 @@ export interface EventChangeCredentials {
     oldCredentials?: Credentials
     newCredentials: Credentials
 }
+
+export interface MessageToSend {
+    title: string
+    message: string
+    key?: string
+    action?: string
+    // TODO: Fill all options
+}

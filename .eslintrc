@@ -7,5 +7,16 @@
     "extends": [
         "eslint:recommended",
         "plugin:@typescript-eslint/recommended"
+    ],
+    "overrides": [
+        {
+            "files": ["**/*.test"],
+            "plugins": ["jest"],
+            "extends": ["plugin:jest/recommended"],
+            "rules": {
+                "no-undef": "off",
+                "import/first": "off"
+            }
+        }
     ]
 }

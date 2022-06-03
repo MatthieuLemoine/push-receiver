@@ -11,3 +11,4 @@ test/keys.js
 dist
 src/protos.d.ts
 *.tsbuildinfo
+yarn-error.log
