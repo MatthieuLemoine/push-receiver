@@ -11,6 +11,7 @@
         "allowSyntheticDefaultImports": true
     },
     "exclude": [
-        "src/protos.d.ts"
+        "src/protos.d.ts",
+        "dist"
     ]
 }

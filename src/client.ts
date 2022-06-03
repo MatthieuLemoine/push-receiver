@@ -122,7 +122,12 @@ export default class PushReceiver extends EventEmitter {
         this.parser.on('message', this.handleMessage)
         this.parser.on('error', this.handleParserError)
 
-        return new Promise((res) => this.onReady(res))
+        return new Promise((res) => {
+            const dispose = this.onReady(() => {
+                dispose();
+                res();
+            });
+        })
     }
 
 
