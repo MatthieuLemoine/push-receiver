@@ -10,12 +10,14 @@ const {
   kLoginRequestTag,
   kDataMessageStanzaTag,
   kLoginResponseTag,
+  kHeartbeatPingTag
 } = require('./constants');
 const { load } = require('protobufjs');
 
 const HOST = 'mtalk.google.com';
 const PORT = 5228;
 const MAX_RETRY_TIMEOUT = 15;
+const HEARTBEAT_INTERVAL = 10;
 
 let proto = null;
 
@@ -78,8 +80,32 @@ module.exports = class Client extends EventEmitter {
     this._socket.write(this._loginBuffer());
   }
 
+  _startHeartBeats(){
+    //every X min send a heartbeat to prevent socket disconnection
+    const intervalMS = HEARTBEAT_INTERVAL * 60 * 1000;
+    const hbBuffer = this._heartBeatBuffer();
+
+    this._heartBeatsInterval = setInterval(function(){
+      if (!this._socket) return clearInterval(this._heartBeatsInterval);
+      this._socket.write(hbBuffer);
+    }.bind(this), intervalMS);
+  }
+
+  _heartBeatBuffer(){
+    const heartBeatType = proto.lookupType('mcs_proto.HeartbeatPing');
+    const heartBeat = {};
+
+    const buffer = heartBeatType.encodeDelimited(heartBeat).finish();
+
+    return Buffer.concat([
+      Buffer.from([kHeartbeatPingTag]),
+      buffer,
+    ]);
+  }
+
   _destroy() {
     clearTimeout(this._retryTimeout);
+    clearInterval(this._heartBeatsInterval)
     if (this._socket) {
       this._socket.removeListener('connect', this._onSocketConnect);
       this._socket.removeListener('close', this._onSocketClose);
@@ -132,10 +158,12 @@ module.exports = class Client extends EventEmitter {
 
   _onSocketConnect() {
     this._retryCount = 0;
+    this._startHeartBeats()
     this.emit('connect');
   }
 
   _onSocketClose() {
+    clearInterval(this._heartBeatsInterval)
     this.emit('disconnect')
     this._retry();
   }
