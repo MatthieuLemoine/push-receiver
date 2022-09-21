@@ -73,6 +73,11 @@ export interface MessageEnvelope {
     persistentId: string
 }
 
+export interface DataPacket<T = any> {
+    tag: number
+    object: T
+}
+
 export interface ClientConfig {
     credentials?: Credentials
     persistentIds?: PersistentId[]
@@ -83,6 +88,7 @@ export interface ClientConfig {
     skipFcmRegistration?: boolean
     logLevel?: keyof typeof LogLevels
     vapidKey?: string
+    heartbeatIntervalMs?: number
 }
 
 export interface EventChangeCredentials {
