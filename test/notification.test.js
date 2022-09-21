@@ -8,8 +8,9 @@ const NOTIFICATIONS = {
 
 const client = new Client({
     senderId: SENDER_ID,
-    logLevel: 'NONE',
+    logLevel: 'DEBUG',
     persistentIds: [],
+    heartbeatIntervalMs: 10000,
 })
 
 let credentials
@@ -19,8 +20,8 @@ client.onCredentialsChanged(credentialsChange => {
 })
 
 describe('Parser', function () {
-    beforeEach(async function () {
-        await client.connect()
+    beforeAll(async function () {
+        await client.connect();
     })
 
     it('should receive a simple notification', async function () {
@@ -37,19 +38,8 @@ describe('Parser', function () {
         expect(notifications[0].message.data).toEqual(NOTIFICATIONS.LARGE)
     })
 
-    it('should receive multiple notifications', async function () {
-        send(NOTIFICATIONS.SIMPLE)
-        send(NOTIFICATIONS.LARGE)
-        send(NOTIFICATIONS.SIMPLE)
-
-        const notifications = await receive(3)
-        expect(notifications.length).toEqual(3)
-        expect(notifications[0].message.data).toEqual(NOTIFICATIONS.SIMPLE)
-        expect(notifications[1].message.data).toEqual(NOTIFICATIONS.LARGE)
-        expect(notifications[2].message.data).toEqual(NOTIFICATIONS.SIMPLE)
-    })
-
-    afterEach(() => {
+    afterAll(() => {
+        client.setLogLevel('NONE');
         client.destroy();
     })
 })
