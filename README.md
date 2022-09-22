@@ -44,6 +44,7 @@ interface ClientConfig {
     skipFcmRegistration?: boolean // Default - false
     logLevel?: keyof typeof LogLevels // 'NONE'|'DEBUG'|'VERBOSE' - default: 'NONE'
     vapidKey?: string // Default - default firebase VAPID key
+    heartbeatIntervalMs?: number // Default - 5 * 60 * 1000
 }
 ```
 
