@@ -241,7 +241,7 @@ export default class PushReceiver extends EventEmitter {
 
         const buffer = HeartbeatPingRequestType.encodeDelimited(heartbeatPingRequest).finish()
 
-        console.log('HEARTBEAT sending PING', heartbeatPingRequest)
+        Logger.verbose('HEARTBEAT sending PING', heartbeatPingRequest)
 
         this.socket.write(Buffer.concat([
             Buffer.from([MCSProtoTag.kHeartbeatPingTag]),
@@ -270,7 +270,7 @@ export default class PushReceiver extends EventEmitter {
 
         const buffer = HeartbeatAckRequestType.encodeDelimited(heartbeatAckRequest).finish()
 
-        console.log('HEARTBEAT sending PONG', heartbeatAckRequest)
+        Logger.verbose('HEARTBEAT sending PONG', heartbeatAckRequest)
 
         this.socket.write(Buffer.concat([
             Buffer.from([MCSProtoTag.kHeartbeatAckTag]),
@@ -338,13 +338,13 @@ export default class PushReceiver extends EventEmitter {
 
             case MCSProtoTag.kHeartbeatPingTag:
                 this.emit('ON_HEARTBEAT')
-                console.log('HEARTBEAT PING', object)
+                Logger.verbose('HEARTBEAT PING', object)
                 this.sendHeartbeatPong(object)
                 break
 
             case MCSProtoTag.kHeartbeatAckTag:
                 this.emit('ON_HEARTBEAT')
-                console.log('HEARTBEAT PONG', object)
+                Logger.verbose('HEARTBEAT PONG', object)
                 break
 
             case MCSProtoTag.kCloseTag:
@@ -387,7 +387,7 @@ export default class PushReceiver extends EventEmitter {
                     // NOTE(ibash) Periodically we're unable to decrypt notifications. In
                     // all cases we've been able to receive future notifications using the
                     // same keys. So, we silently drop this notification.
-                    console.warn('Message dropped as it could not be decrypted: ' + error.message)
+                    Logger.warn('Message dropped as it could not be decrypted: ' + error.message)
                     return
                 default:
                     throw error
