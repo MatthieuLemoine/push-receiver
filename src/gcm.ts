@@ -3,6 +3,7 @@ import { randomUUID } from 'crypto'
 import request from './utils/request'
 import delay from './utils/timeout'
 import Protos from './protos'
+import Logger from './utils/logger'
 
 import type * as Types from './types'
 
@@ -73,12 +74,12 @@ async function postRegister({ androidId, securityToken, body, retry = 0 }): Prom
     })
 
     if (response.includes('Error')) {
-        console.warn(`Register request has failed with ${response}`)
+        Logger.warn(`Register request has failed with ${response}`)
         if (retry >= 5) {
             throw new Error('GCM register has failed')
         }
 
-        console.warn(`Retry... ${retry + 1}`)
+        Logger.warn(`Retry... ${retry + 1}`)
         await delay(1000)
         return postRegister({ androidId, securityToken, body, retry: retry + 1 })
     }

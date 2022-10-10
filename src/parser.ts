@@ -201,7 +201,7 @@ export default class Parser extends EventEmitter {
 
         if (this.messageTag === MCSProtoTag.kLoginResponseTag) {
             if (this.handshakeComplete) {
-                console.error('Unexpected login response')
+                Logger.error('Unexpected login response')
             } else {
                 this.handshakeComplete = true
                 Logger.verbose('GCM Handshake complete.')
