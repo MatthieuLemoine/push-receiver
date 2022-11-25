@@ -142,7 +142,7 @@ module.exports = class Client extends EventEmitter {
 
   _onSocketError(error) {
     // ignore, the close handler takes care of retry
-    this.emit('error', error); // Expose the error message for debugging reasons
+    this.emit('error', error); // Expose the error object so the application can identify the reason for the disconnects
   }
 
   _onParserError(error) {
