@@ -1,4 +1,5 @@
 import { LogLevels } from "./constants"
+import { AxiosRequestConfig } from 'axios'
 
 export interface Credentials {
     keys: Keys
@@ -89,6 +90,10 @@ export interface ClientConfig {
     logLevel?: keyof typeof LogLevels
     vapidKey?: string
     heartbeatIntervalMs?: number
+    axiosConfig?: Omit<
+      AxiosRequestConfig,
+      'url' | 'method' | 'headers' | 'data' | 'responseType'
+    >
 }
 
 export interface EventChangeCredentials {

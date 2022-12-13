@@ -18,13 +18,14 @@ export default async (config: Types.ClientConfig): Promise<Types.GcmData> => {
 
 export async function checkIn(config: Types.ClientConfig): Promise<Types.GcmData> {
     const body = await request<ArrayBuffer>({
+        ...config.axiosConfig,
         url: CHECKIN_URL,
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-protobuf',
         },
         data: prepareCheckinBuffer(config),
-        responseType: 'arraybuffer' 
+        responseType: 'arraybuffer',
     })
 
     const AndroidCheckinResponse = Protos.checkin_proto.AndroidCheckinResponse
@@ -41,7 +42,7 @@ export async function checkIn(config: Types.ClientConfig): Promise<Types.GcmData
     }
 }
 
-async function doRegister({ androidId, securityToken }, config: Types.ClientConfig): Promise<Types.GcmData> {
+async function doRegister({ androidId, securityToken }: Types.GcmData, config: Types.ClientConfig): Promise<Types.GcmData> {
     const appId = `wp:${config.bundleId}#${randomUUID()}`
     const body = (new URLSearchParams({
         app: 'org.chromium.linux',
@@ -50,7 +51,7 @@ async function doRegister({ androidId, securityToken }, config: Types.ClientConf
         sender: config.vapidKey,
     })).toString()
 
-    const response = await postRegister({ androidId, securityToken, body })
+    const response = await postRegister({ androidId, securityToken, body, axiosConfig: config.axiosConfig })
     const token = response.split('=')[1]
 
     return {
@@ -62,8 +63,15 @@ async function doRegister({ androidId, securityToken }, config: Types.ClientConf
 }
 
 
-async function postRegister({ androidId, securityToken, body, retry = 0 }): Promise<string> {
+async function postRegister({ androidId, securityToken, body, retry = 0, axiosConfig }: {
+    androidId: Types.GcmData['androidId']
+    securityToken: Types.GcmData['securityToken']
+    body: string
+    retry?: number
+    axiosConfig: Types.ClientConfig['axiosConfig']
+}): Promise<string> {
     const response = await request<string>({
+        ...axiosConfig,
         url: REGISTER_URL,
         method: 'POST',
         headers: {
@@ -81,7 +89,7 @@ async function postRegister({ androidId, securityToken, body, retry = 0 }): Prom
 
         Logger.warn(`Retry... ${retry + 1}`)
         await delay(1000)
-        return postRegister({ androidId, securityToken, body, retry: retry + 1 })
+        return postRegister({ androidId, securityToken, body, retry: retry + 1, axiosConfig })
     }
 
     return response
