@@ -51,7 +51,7 @@ interface ClientConfig {
 ### Node example
 
 ```javascript
-import PushReceiver from '@eneris/push-receiver'
+import { PushReceiver } from '@eneris/push-receiver'
 import { argv as parsedArgs } from 'yargs'
 
 if (!parsedArgs.senderId) {
