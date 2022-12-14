@@ -443,3 +443,5 @@ export default class PushReceiver extends EventEmitter {
         }, serverApiKey)
     }
 }
+
+export { PushReceiver }
