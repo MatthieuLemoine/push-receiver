@@ -1,4 +1,5 @@
-const PushReceiver = require('../dist/client.js').default
+/* eslint-disable */
+const { PushReceiver } = require('../dist/client.js')
 const yargs = require('yargs/yargs')
 
 const parsedArgs = yargs(process.argv.slice(2)).argv
