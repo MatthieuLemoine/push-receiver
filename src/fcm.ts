@@ -10,6 +10,7 @@ const FCM_ENDPOINT = 'https://fcm.googleapis.com/fcm/send'
 export default async function registerFCM(gcm: Types.GcmData, config: Types.ClientConfig): Promise<Types.Credentials> {
     const keys = await createKeys()
     const response = await request<Types.FcmData>({
+        ...config.axiosConfig,
         url: FCM_SUBSCRIBE,
         method: 'POST',
         headers: {
