@@ -150,6 +150,7 @@ export default class PushReceiver extends EventEmitter {
 
     public destroy = () => {
         clearTimeout(this.retryTimeout)
+        this.clearHeartbeat()
 
         if (this.socket) {
             this.socket.off('close', this.handleSocketClose)
