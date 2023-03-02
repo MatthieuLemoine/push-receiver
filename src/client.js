@@ -27,16 +27,18 @@ module.exports = class Client extends EventEmitter {
     proto = await load(path.resolve(__dirname, 'mcs.proto'));
   }
 
-  constructor(credentials, persistentIds) {
+  constructor(credentials, { persistentIds, socketTimeout } = {}) {
     super();
     this._credentials = credentials;
     this._persistentIds = persistentIds || [];
+    this._socketTimeout = socketTimeout;
     this._retryCount = 0;
     this._onSocketConnect = this._onSocketConnect.bind(this);
     this._onSocketClose = this._onSocketClose.bind(this);
     this._onSocketError = this._onSocketError.bind(this);
     this._onMessage = this._onMessage.bind(this);
     this._onParserError = this._onParserError.bind(this);
+    this._onSocketTimeout = this._onSocketTimeout.bind(this);
   }
 
   async connect() {
@@ -70,10 +72,16 @@ module.exports = class Client extends EventEmitter {
 
   _connect() {
     this._socket = new tls.TLSSocket();
+
+    if (this._socketTimeout) {
+      this._socket.setTimeout(this._socketTimeout);
+    }
+
     this._socket.setKeepAlive(true);
     this._socket.on('connect', this._onSocketConnect);
-    this._socket.on('close', this._onSocketClose);
     this._socket.on('error', this._onSocketError);
+    this._socket.on('timeout', this._onSocketTimeout);
+    this._socket.on('close', this._onSocketClose);
     this._socket.connect({ host : HOST, port : PORT });
     this._socket.write(this._loginBuffer());
   }
@@ -136,15 +144,20 @@ module.exports = class Client extends EventEmitter {
   }
 
   _onSocketClose() {
-    this.emit('disconnect')
+    this.emit('disconnect');
     this._retry();
   }
 
-  _onSocketError(error) {
+  _onSocketError() {
     // ignore, the close handler takes care of retry
   }
 
-  _onParserError(error) {
+  _onSocketTimeout() {
+    // Socket will be reopened by the _onSocketClose handler
+    this._socket.destroy();
+  }
+
+  _onParserError() {
     this._retry();
   }
 
