@@ -27,11 +27,15 @@ module.exports = class Client extends EventEmitter {
     proto = await load(path.resolve(__dirname, 'mcs.proto'));
   }
 
-  constructor(credentials, { persistentIds, socketTimeout } = {}) {
+  constructor(
+    credentials,
+    { persistentIds, socketTimeout, socketKeepAliveDelay } = {}
+  ) {
     super();
     this._credentials = credentials;
     this._persistentIds = persistentIds || [];
     this._socketTimeout = socketTimeout;
+    this._socketKeepAliveDelay = socketKeepAliveDelay;
     this._retryCount = 0;
     this._onSocketConnect = this._onSocketConnect.bind(this);
     this._onSocketClose = this._onSocketClose.bind(this);
@@ -77,7 +81,8 @@ module.exports = class Client extends EventEmitter {
       this._socket.setTimeout(this._socketTimeout);
     }
 
-    this._socket.setKeepAlive(true);
+    // Set default keep alive delay to 10s to prevent connection drop in electron v20+
+    this._socket.setKeepAlive(true, this._socketKeepAliveDelay || 10 * 1000);
     this._socket.on('connect', this._onSocketConnect);
     this._socket.on('error', this._onSocketError);
     this._socket.on('timeout', this._onSocketTimeout);
