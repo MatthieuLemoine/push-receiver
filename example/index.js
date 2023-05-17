@@ -20,7 +20,7 @@ const main = async () => {
         console.log('Client generated new credentials. Save them somewhere! And decide if thing are needed to re-subscribe', newCredentials)
     })
 
-    const stopListeningToNotifications = instance.onNotification(({ notification }) => {
+    const stopListeningToNotifications = instance.onNotification(notification => {
         // Do someting with the notification
         console.log('Notification received', notification)
     })
