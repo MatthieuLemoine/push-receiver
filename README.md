@@ -71,7 +71,7 @@ if (!parsedArgs.senderId) {
         // Save them somewhere! And decide if thing are needed to re-subscribe
     })
 
-    const stopListeningToNotifications = instance.onNotification(({ notification }) => {
+    const stopListeningToNotifications = instance.onNotification(notification => {
         // Do someting with the notification
         console.log('Notification received', notification)
     })
