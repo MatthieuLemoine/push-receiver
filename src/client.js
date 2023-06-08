@@ -14,7 +14,7 @@ const {
 const { load } = require('protobufjs');
 
 const HOST = 'mtalk.google.com';
-const PORT = 5228;
+const PORT = 443;
 const MAX_RETRY_TIMEOUT = 15;
 
 let proto = null;
