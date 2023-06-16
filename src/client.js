@@ -141,6 +141,7 @@ module.exports = class Client extends EventEmitter {
   }
 
   _onSocketError(error) {
+    this.emit('error', error)
     // ignore, the close handler takes care of retry
   }
 
