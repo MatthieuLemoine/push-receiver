@@ -1,6 +1,6 @@
 {
     "name": "@eneris/push-receiver",
-    "version": "3.1.4",
+    "version": "3.1.5",
     "description": "A module to subscribe to GCM/FCM and receive notifications within a node process.",
     "main": "dist/client.js",
     "types": "dist/client.d.ts",
@@ -10,16 +10,14 @@
         "*.md"
     ],
     "scripts": {
-        "protos:convert": "mkdirp dist && yarn pbjs -t static-module --force-long --wrap commonjs -o ./dist/protos.js ./src/protos/*.proto",
-        "protos:ts": "yarn pbts -o ./dist/protos.d.ts ./dist/protos.js",
-        "protos:dev": "yarn pbts -o ./src/protos.d.ts ./dist/protos.js",
-        "protos:build": "yarn protos:convert && yarn protos:ts && yarn protos:dev",
-        "build": "yarn clean && yarn protos:build && yarn tsc",
-        "compile": "yarn protos:build && yarn tsc --incremental",
+        "protos:convert": "yarn pbjs -t static-module --force-long --wrap commonjs -o ./src/protos.js ./src/protos/*.proto",
+        "protos": "yarn pbts -o ./src/protos.d.ts ./src/protos.js",
+        "protos:build": "yarn protos:convert && yarn protos",
+        "protos:copy": "cp ./src/protos.* ./dist/",
+        "build": "yarn protos:build && yarn tsc && yarn protos:copy",
         "prepublish": "yarn build",
         "test": "jest",
         "lint": "yarn eslint src --ext .ts",
-        "clean": "rimraf ./dist",
         "precommit": "yarn lint && yarn build",
         "prepare": "yarn prepublish"
     },
@@ -44,26 +42,24 @@
     },
     "homepage": "https://github.com/eneris/push-receiver#readme",
     "devDependencies": {
-        "@types/jest": "^29.2.4",
-        "@types/node": "^18.11.15",
-        "@typescript-eslint/eslint-plugin": "^5.46.1",
-        "@typescript-eslint/parser": "^5.46.1",
-        "eslint": "^8.29.0",
-        "eslint-plugin-jest": "^27.1.6",
-        "husky": "^8.0.2",
-        "jest": "^29.3.1",
-        "mkdirp": "^1.0.4",
-        "protobufjs-cli": "^1.0.2",
-        "rimraf": "^3.0.2",
-        "ts-jest": "^29.0.3",
-        "typescript": "^4.9.4",
-        "yargs": "^17.6.2"
+        "@types/jest": "^29.5.3",
+        "@types/node": "^20.5.2",
+        "@typescript-eslint/eslint-plugin": "^6.4.1",
+        "@typescript-eslint/parser": "^6.4.1",
+        "eslint": "^8.47.0",
+        "eslint-plugin-jest": "^27.2.3",
+        "husky": "^8.0.3",
+        "jest": "^29.6.3",
+        "protobufjs-cli": "^1.1.2",
+        "ts-jest": "^29.1.1",
+        "typescript": "^5.1.6",
+        "yargs": "^17.7.2"
     },
     "dependencies": {
-        "axios": "^1.2.1",
+        "axios": "^1.4.0",
         "http_ece": "^1.0.5",
-        "long": "^5.2.1",
-        "protobufjs": "^7.1.2"
+        "long": "^5.2.3",
+        "protobufjs": "^7.2.5"
     },
     "engines": {
         "node": ">=14"
