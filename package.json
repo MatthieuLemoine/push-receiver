@@ -41,7 +41,7 @@
     },
     "homepage": "https://github.com/eneris/push-receiver#readme",
     "devDependencies": {
-        "@types/node": "^20.12.8",
+        "@types/node": "^20.12.11",
         "@typescript-eslint/eslint-plugin": "^7.8.0",
         "@typescript-eslint/parser": "^7.8.0",
         "eslint": "^9.2.0",
@@ -53,7 +53,7 @@
         "http_ece": "^1.2.0",
         "jsonwebtoken": "^9.0.2",
         "long": "^5.2.3",
-        "protobufjs": "^7.2.6"
+        "protobufjs": "^7.3.0"
     },
     "engines": {
         "node": ">=20"
