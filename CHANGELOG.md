@@ -1,7 +1,8 @@
 # @eneris/push-receiver
 
-## 4.0.0-beta
-### Braking changes 
+## 4.0.1-beta
+### Braking changes
+- New parametrer `firebase` is now requried in the config - this is used mainly for FCM installation
 - FCM `installation` data were added into `fcm` part of `Credentials` containing Firebase Install credentials - Token refreshing is in TODO
 - Removed the `logLevel` option and replaced it with `debug: boolean`
 - Moved `sentTestMessage` into separate class called `PushSender`

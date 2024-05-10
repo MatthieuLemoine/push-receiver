@@ -2,10 +2,6 @@
 
 A library to subscribe to GCM/FCM and receive notifications within a node process.
 
-For [Electron](https://github.com/electron/electron), you can use [electron-push-receiver](https://github.com/MatthieuLemoine/electron-push-receiver) instead which provides a convenient wrapper.
-
-See [this blog post](https://medium.com/@MatthieuLemoine/my-journey-to-bring-web-push-support-to-node-and-electron-ce70eea1c0b0) for more details.
-
 ## When should I use `push-receiver` ?
 
 - I want to **receive** push notifications sent using Firebase Cloud Messaging in an [electron](https://github.com/electron/electron) desktop application.
@@ -22,12 +18,14 @@ See [this blog post](https://medium.com/@MatthieuLemoine/my-journey-to-bring-web
 npm i -S @eneris/push-receiver
 `
 
-## Requirements
+## Requirements 
 
 - Node v16 (async/await/randomUUID support)
 - Firebase sender id to receive notification
 - Firebase serverKey to send notification (optional)
 
+## Acknowledgements 
+- https://github.com/MatthieuLemoine - for creating initial module on wich uppon in iterated
 
 ## Usage
 
@@ -40,9 +38,10 @@ interface ClientConfig {
     bundleId?: string // Default - 'receiver.push.com'
     chromeId?: string // Default - 'org.chromium.linux'
     chromeVersion?: string // Default - '94.0.4606.51'
-    logLevel?: keyof typeof LogLevels // 'NONE'|'DEBUG'|'VERBOSE' - default: 'NONE'
+    debug?: boolean // Enables debug console logs
     vapidKey?: string // Default - default firebase VAPID key
     heartbeatIntervalMs?: number // Default - 5 * 60 * 1000
+    firebase: FirebaseConfig // Full client firebase credentials are now needed
 }
 ```
 
@@ -50,7 +49,6 @@ interface ClientConfig {
 
 ```javascript
 import { PushReceiver } from '@eneris/push-receiver'
-import { argv as parsedArgs } from 'yargs'
 
 (async () => {
     const instance = new PushReceiver({

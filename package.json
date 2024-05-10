@@ -1,6 +1,6 @@
 {
     "name": "@eneris/push-receiver",
-    "version": "4.0.0-beta",
+    "version": "4.0.1-beta",
     "description": "A module to subscribe to GCM/FCM and receive notifications within a node process.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -34,7 +34,7 @@
         "electron",
         "receiver"
     ],
-    "author": "MatthieuLemoine",
+    "author": "Eneris & MatthieuLemoine",
     "license": "MIT",
     "bugs": {
         "url": "https://github.com/eneris/push-receiver/issues"
@@ -46,8 +46,7 @@
         "@typescript-eslint/parser": "^7.8.0",
         "eslint": "^9.2.0",
         "protobufjs-cli": "^1.1.2",
-        "typescript": "^5.4.5",
-        "yargs": "^17.7.2"
+        "typescript": "^5.4.5"
     },
     "dependencies": {
         "http_ece": "^1.2.0",
