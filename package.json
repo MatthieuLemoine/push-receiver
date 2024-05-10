@@ -16,7 +16,6 @@
         "protos:copy": "cp ./src/protos.* ./dist/",
         "build": "yarn protos:build && yarn tsc && yarn protos:copy",
         "prepublish": "yarn build",
-        "test": "jest",
         "lint": "yarn eslint src --ext .ts",
         "precommit": "yarn lint && yarn build",
         "prepare": "yarn prepublish"
@@ -46,7 +45,6 @@
         "@typescript-eslint/eslint-plugin": "^7.8.0",
         "@typescript-eslint/parser": "^7.8.0",
         "eslint": "^9.2.0",
-        "eslint-plugin-jest": "^28.5.0",
         "protobufjs-cli": "^1.1.2",
         "typescript": "^5.4.5",
         "yargs": "^17.7.2"
