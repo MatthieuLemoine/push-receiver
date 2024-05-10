@@ -7,10 +7,10 @@ const NOTIFICATIONS = {
 }
 
 const client = new Client({
-    senderId: SENDER_ID,
     logLevel: 'DEBUG',
     persistentIds: [],
     heartbeatIntervalMs: 10000,
+    firebase: {} // TODO
 })
 
 let credentials
@@ -21,7 +21,7 @@ client.onCredentialsChanged(credentialsChange => {
 
 describe('Parser', function () {
     beforeAll(async function () {
-        await client.connect();
+        await client.connect()
     })
 
     it('should receive a simple notification', async function () {
@@ -39,8 +39,8 @@ describe('Parser', function () {
     })
 
     afterAll(() => {
-        client.setLogLevel('NONE');
-        client.destroy();
+        client.setLogLevel('NONE')
+        client.destroy()
     })
 })
 
@@ -59,7 +59,7 @@ async function receive(n) {
 
     return new Promise((resolve) => {
         client.onNotification(notification => {
-            console.log('got notification', notification);
+            console.log('got notification', notification)
 
             received.push(notification)
 

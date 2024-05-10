@@ -1,10 +1,15 @@
-import { LogLevels } from "./constants"
-import { AxiosRequestConfig } from 'axios'
-
 export interface Credentials {
-    keys: Keys
     gcm: GcmData
     fcm: FcmData
+    keys: Keys
+}
+
+export interface InstallationData {
+    token: string
+    createdAt: number
+    expiresIn: number
+    refreshToken: string
+    fid: string
 }
 
 export interface Keys {
@@ -13,17 +18,43 @@ export interface Keys {
     authSecret: string
 }
 
-export interface GcmData {
+export interface GcmCheckinResponse {
     androidId: string
     securityToken: string
-    appId?: string
-    token?: string
+}
+
+export interface GcmRegisterResponse {
+    appId: string
+    token: string
+}
+
+export type GcmData = GcmCheckinResponse & GcmRegisterResponse
+
+export interface FcmRegistrationResponse {
+    name: string
+    token: string
+    web: {
+        applicationPubKey: string
+        auth: string
+        endpoint: string
+        p256dh: string
+    }
+}
+
+export interface FcmInstallationResponse {
+    authToken: {
+        expiresIn: string
+        token: string
+    }
+    fid: string
+    name: string
+    refreshToken: string
 }
 
 // TODO: replace this with actual data
-export type FcmData = {
+export interface FcmData {
     token: string
-    pushSet: string
+    installation: InstallationData
 }
 
 export type PersistentId = string
@@ -79,21 +110,44 @@ export interface DataPacket<T = any> {
     object: T
 }
 
+export interface FirebaseConfig {
+    projectId: string
+    appId: string
+    apiKey: string
+    messagingSenderId: string
+    authDomain?: string
+    databaseURL?: string
+    storageBucket?: string
+    measurementId?: string
+}
+
 export interface ClientConfig {
     credentials?: Credentials
     persistentIds?: PersistentId[]
-    senderId: string
     bundleId?: string
     chromeId?: string
+    /**
+     * 1 = Windows
+     * 2 = Darwin
+     * 3 = Linux
+     * 4 = Cros
+     * 5 = iOS
+     */
+    chromePlatform?: number
+    /**
+     * 1 = stable
+     * 2 = beta
+     * 3 = dev
+     * 4 = canary
+     * 5 = unknown
+     */
+    chromeChannel?: number
     chromeVersion?: string
-    skipFcmRegistration?: boolean
-    logLevel?: keyof typeof LogLevels
+    timeZone?: string
+    debug?: boolean
     vapidKey?: string
     heartbeatIntervalMs?: number
-    axiosConfig?: Omit<
-      AxiosRequestConfig,
-      'url' | 'method' | 'headers' | 'data' | 'responseType'
-    >
+    firebase: FirebaseConfig
 }
 
 export interface EventChangeCredentials {
@@ -103,8 +157,5 @@ export interface EventChangeCredentials {
 
 export interface MessageToSend {
     title: string
-    message: string
-    key?: string
-    action?: string
-    // TODO: Fill all options
+    body: string
 }

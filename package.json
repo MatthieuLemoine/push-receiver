@@ -1,9 +1,9 @@
 {
     "name": "@eneris/push-receiver",
-    "version": "3.1.5",
+    "version": "4.0.0-beta",
     "description": "A module to subscribe to GCM/FCM and receive notifications within a node process.",
-    "main": "dist/client.js",
-    "types": "dist/client.d.ts",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "files": [
         "dist",
         "package*",
@@ -42,26 +42,22 @@
     },
     "homepage": "https://github.com/eneris/push-receiver#readme",
     "devDependencies": {
-        "@types/jest": "^29.5.3",
-        "@types/node": "^20.5.2",
-        "@typescript-eslint/eslint-plugin": "^6.4.1",
-        "@typescript-eslint/parser": "^6.4.1",
-        "eslint": "^8.47.0",
-        "eslint-plugin-jest": "^27.2.3",
-        "husky": "^8.0.3",
-        "jest": "^29.6.3",
+        "@types/node": "^20.12.8",
+        "@typescript-eslint/eslint-plugin": "^7.8.0",
+        "@typescript-eslint/parser": "^7.8.0",
+        "eslint": "^9.2.0",
+        "eslint-plugin-jest": "^28.5.0",
         "protobufjs-cli": "^1.1.2",
-        "ts-jest": "^29.1.1",
-        "typescript": "^5.1.6",
+        "typescript": "^5.4.5",
         "yargs": "^17.7.2"
     },
     "dependencies": {
-        "axios": "^1.4.0",
-        "http_ece": "^1.0.5",
+        "http_ece": "^1.2.0",
+        "jsonwebtoken": "^9.0.2",
         "long": "^5.2.3",
-        "protobufjs": "^7.2.5"
+        "protobufjs": "^7.2.6"
     },
     "engines": {
-        "node": ">=14"
+        "node": ">=20"
     }
 }

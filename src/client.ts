@@ -2,9 +2,9 @@ import { EventEmitter } from 'events'
 import Long from 'long'
 import ProtobufJS from 'protobufjs'
 import tls from 'tls'
-import axios from 'axios'
 import registerGCM, { checkIn } from './gcm'
 import registerFCM from './fcm'
+import createKeys from './keys'
 import Parser from './parser'
 import decrypt from './utils/decrypt'
 import Logger from './utils/logger'
@@ -21,7 +21,6 @@ export {
 ProtobufJS.util.Long = Long
 ProtobufJS.configure()
 
-const FCM_SEND_API = 'https://fcm.googleapis.com/fcm/send'
 const HOST = 'mtalk.google.com'
 const PORT = 5228
 const MAX_RETRY_TIMEOUT = 15
@@ -42,15 +41,13 @@ export default class PushReceiver extends EventEmitter {
     constructor(config: Types.ClientConfig) {
         super()
 
-        Logger.setLogLevel(config.logLevel ?? 'NONE')
-
-        Logger.verbose('constructor', config)
+        Logger.debug('constructor', config)
 
         this.config = {
             bundleId: 'receiver.push.com',
             chromeId: 'org.chromium.linux',
             chromeVersion: '94.0.4606.51',
-            vapidKey: 'BDOU99-h67HcA6JeFXHbSNMu7e2yNNu3RzoMj8TM4W88jITfq7ZmPvIM1Iv-4_l2LxQcYwhqby2xGpWwzjfAnG4', // This is default Firebase VAPID key
+            vapidKey: '',
             persistentIds: [],
             heartbeatIntervalMs: 5 * 60 * 1000, // 5 min
             ...config
@@ -59,8 +56,8 @@ export default class PushReceiver extends EventEmitter {
         this.persistentIds = this.config.persistentIds
     }
 
-    public setLogLevel(logLevel: Types.ClientConfig['logLevel']) {
-        Logger.setLogLevel(logLevel)
+    public setDebug(enabled?: boolean) {
+        Logger.setDebug(enabled)
     }
 
     public on(event: 'ON_MESSAGE_RECEIVED', listener: (data: Types.MessageEnvelope) => void): this
@@ -112,18 +109,9 @@ export default class PushReceiver extends EventEmitter {
     public connect = async (): Promise<void> => {
         if (this.socket) return
 
-        Logger.verbose('connect')
-        if (this.config.credentials) {
-            Logger.verbose('checkin')
-            await this.checkIn()
-        } else {
-            Logger.warn('Missing credentials... Runing register.')
-            const oldCredentials = this.config.credentials
-            const newCredentials = await this.register()
-            this.emit('ON_CREDENTIALS_CHANGE', { oldCredentials, newCredentials })
-            this.config.credentials = newCredentials
-            Logger.verbose('got credentials', newCredentials)
-        }
+        await this.registerIfNeeded()
+
+        Logger.debug('connect')
 
         this.lastStreamIdReported = -1
 
@@ -166,13 +154,43 @@ export default class PushReceiver extends EventEmitter {
         }
     }
 
-    public async register(): Promise<Types.Credentials> {
-        const subscription = await registerGCM(this.config)
-        return registerFCM(subscription, this.config)
-    }
+    public async registerIfNeeded(): Promise<Types.Credentials> {
+        let change = false
+        const credentials: Types.Credentials = this.config.credentials || {
+            keys: null,
+            gcm: null,
+            fcm: null,
+        }
+        
+        if (!credentials?.gcm) {
+            credentials.gcm = await registerGCM(this.config)
+            change = true
+        } else {
+            Logger.debug('checkin')
+            await checkIn(this.config)
+        }
 
-    public checkIn(): Promise<Types.GcmData> {
-        return checkIn(this.config)
+        if (!credentials.keys) {
+            credentials.keys = await createKeys()
+            change = true
+        }
+
+        if (!credentials?.fcm || !credentials.fcm.installation) {
+            credentials.fcm = await registerFCM(credentials.gcm, credentials.keys, this.config)
+            change = true
+        }
+
+        if (change) {
+            this.emit('ON_CREDENTIALS_CHANGE', {
+                oldCredentials: this.config.credentials,
+                newCredentials: credentials
+            })
+
+            this.config.credentials = credentials
+            Logger.debug('got credentials', credentials)
+        }
+
+        return this.config.credentials
     }
 
     private clearHeartbeat() {
@@ -231,7 +249,7 @@ export default class PushReceiver extends EventEmitter {
             heartbeatPingRequest.last_stream_id_received = this.getStreamId()
         }
 
-        Logger.verbose('Heartbeat send pong', heartbeatPingRequest)
+        Logger.debug('Heartbeat send pong', heartbeatPingRequest)
 
         const HeartbeatPingRequestType = Protos.mcs_proto.HeartbeatPing
         const errorMessage = HeartbeatPingRequestType.verify(heartbeatPingRequest)
@@ -242,7 +260,7 @@ export default class PushReceiver extends EventEmitter {
 
         const buffer = HeartbeatPingRequestType.encodeDelimited(heartbeatPingRequest).finish()
 
-        Logger.verbose('HEARTBEAT sending PING', heartbeatPingRequest)
+        Logger.debug('HEARTBEAT sending PING', heartbeatPingRequest)
 
         this.socket.write(Buffer.concat([
             Buffer.from([MCSProtoTag.kHeartbeatPingTag]),
@@ -261,7 +279,7 @@ export default class PushReceiver extends EventEmitter {
             heartbeatAckRequest.status = object.status
         }
 
-        Logger.verbose('Heartbeat send pong', heartbeatAckRequest)
+        Logger.debug('Heartbeat send pong', heartbeatAckRequest)
 
         const HeartbeatAckRequestType = Protos.mcs_proto.HeartbeatAck
         const errorMessage = HeartbeatAckRequestType.verify(heartbeatAckRequest)
@@ -271,7 +289,7 @@ export default class PushReceiver extends EventEmitter {
 
         const buffer = HeartbeatAckRequestType.encodeDelimited(heartbeatAckRequest).finish()
 
-        Logger.verbose('HEARTBEAT sending PONG', heartbeatAckRequest)
+        Logger.debug('HEARTBEAT sending PONG', heartbeatAckRequest)
 
         this.socket.write(Buffer.concat([
             Buffer.from([MCSProtoTag.kHeartbeatAckTag]),
@@ -339,22 +357,22 @@ export default class PushReceiver extends EventEmitter {
 
             case MCSProtoTag.kHeartbeatPingTag:
                 this.emit('ON_HEARTBEAT')
-                Logger.verbose('HEARTBEAT PING', object)
+                Logger.debug('HEARTBEAT PING', object)
                 this.sendHeartbeatPong(object)
                 break
 
             case MCSProtoTag.kHeartbeatAckTag:
                 this.emit('ON_HEARTBEAT')
-                Logger.verbose('HEARTBEAT PONG', object)
+                Logger.debug('HEARTBEAT PONG', object)
                 break
 
             case MCSProtoTag.kCloseTag:
-                Logger.verbose('Close: Server requested close! message: ', JSON.stringify(object))
+                Logger.debug('Close: Server requested close! message: ', JSON.stringify(object))
                 this.handleSocketClose()
                 break
 
             case MCSProtoTag.kLoginRequestTag:
-                Logger.verbose('Login request: message: ', JSON.stringify(object))
+                Logger.debug('Login request: message: ', JSON.stringify(object))
                 break
 
             case MCSProtoTag.kIqStanzaTag:
@@ -408,40 +426,6 @@ export default class PushReceiver extends EventEmitter {
     private handleParserError = (error) => {
         Logger.error(error)
         this.socketRetry()
-    }
-
-    public send(message: Types.MessageToSend, serverApiKey: string): Promise<void> {
-        Logger.verbose('testMessage')
-        if (!serverApiKey) throw new Error('Can\'t test messages without serverApiKey')
-
-        const data = {
-            time_to_live: 3,
-            data: message,
-            registration_ids: [this.config.credentials.fcm.token]
-        }
-
-        return axios.post(FCM_SEND_API, data, {
-            headers: {
-                Authorization: `key=${serverApiKey}`
-            }
-        }).then(({ data }) => {
-            if (data.failure) {
-                Logger.debug('Message test failed')
-                throw new Error(data)
-            }
-
-            Logger.debug('Message test passed')
-        })
-    }
-
-    public testMessage(serverApiKey: string): Promise<void> {
-        Logger.verbose('testMessage')
-        return this.send({
-            message: "PushReceiver test message",
-            title: "testMessage",
-            key: "",
-            action: ""
-        }, serverApiKey)
     }
 }
 

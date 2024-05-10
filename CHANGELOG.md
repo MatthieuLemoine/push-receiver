@@ -1,5 +1,15 @@
 # @eneris/push-receiver
 
+## 4.0.0-beta
+### Braking changes 
+- FCM `installation` data were added into `fcm` part of `Credentials` containing Firebase Install credentials - Token refreshing is in TODO
+- Removed the `logLevel` option and replaced it with `debug: boolean`
+- Moved `sentTestMessage` into separate class called `PushSender`
+
+### Major changes
+- Replaced `axios` with native `fetch` in Node v20+
+- Added `index` export for `PushReceiver` and `PushSender`
+
 ## 3.1.0
 
 ### Minor Changes

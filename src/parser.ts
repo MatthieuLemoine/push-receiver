@@ -46,7 +46,7 @@ export default class Parser extends EventEmitter {
     }
 
     private handleData = (buffer) => {
-        Logger.verbose(`Got data: ${buffer.length}`)
+        Logger.debug(`Got data: ${buffer.length}`)
         this.data = Buffer.concat([this.data, buffer])
         if (this.isWaitingForData) {
             this.isWaitingForData = false
@@ -55,18 +55,19 @@ export default class Parser extends EventEmitter {
     }
 
     private waitForData() {
-        Logger.verbose(`waitForData state: ${this.state}`)
+        Logger.debug(`waitForData state: ${this.state}`)
 
         let minBytesNeeded = 0
 
         switch (this.state) {
             case ProcessingState.MCS_VERSION_TAG_AND_SIZE:
-                minBytesNeeded = Variables.kVersionPacketLen + Variables.kTagPacketLen + Variables.kSizePacketLenMin
-                break
+                minBytesNeeded += Variables.kVersionPacketLen
+            // eslint-disable-next-line no-fallthrough
             case ProcessingState.MCS_TAG_AND_SIZE:
-                minBytesNeeded = Variables.kTagPacketLen + Variables.kSizePacketLenMin
-                break
+                minBytesNeeded += Variables.kTagPacketLen
+                // eslint-disable-next-line no-fallthrough
             case ProcessingState.MCS_SIZE:
+                minBytesNeeded += Variables.kSizePacketLenMin
                 break
             case ProcessingState.MCS_PROTO_BYTES:
                 minBytesNeeded = this.messageSize
@@ -77,20 +78,22 @@ export default class Parser extends EventEmitter {
         }
 
         if (this.data.length < minBytesNeeded) {
-            // TODO(ibash) set a timeout and check for socket disconnect
-            Logger.verbose(`Socket read finished prematurely. Waiting for ${minBytesNeeded - this.data.length} more bytes`)
+            Logger.debug(`Waiting for ${minBytesNeeded - this.data.length} more bytes. Got ${this.data.length}`)
             this.isWaitingForData = true
             return
         }
 
-        Logger.verbose(`Processing MCS data: state == ${this.state}`)
+        Logger.debug(`Processing MCS data: state == ${this.state}`)
 
         switch (this.state) {
             case ProcessingState.MCS_VERSION_TAG_AND_SIZE:
                 this.handleGotVersion()
+                this.handleGotMessageTag()
+                this.handleGotMessageSize()
                 break
             case ProcessingState.MCS_TAG_AND_SIZE:
                 this.handleGotMessageTag()
+                this.handleGotMessageSize()
                 break
             case ProcessingState.MCS_SIZE:
                 this.handleGotMessageSize()
@@ -107,23 +110,19 @@ export default class Parser extends EventEmitter {
     private handleGotVersion() {
         const version = this.data.readInt8(0)
         this.data = this.data.slice(1)
-        Logger.verbose(`VERSION IS ${version}`)
+        Logger.debug(`VERSION IS ${version}`)
 
         if (version < Variables.kMCSVersion && version !== 38) {
             this.emitError(new Error(`Got wrong version: ${version}`))
             return
         }
-
-        // Process the LoginResponse message tag.
-        this.handleGotMessageTag()
     }
 
     private handleGotMessageTag() {
         this.messageTag = this.data.readInt8(0)
         this.data = this.data.slice(1)
-        Logger.verbose(`RECEIVED PROTO OF TYPE ${this.messageTag}`)
+        Logger.debug(`RECEIVED PROTO OF TYPE ${this.messageTag}`)
 
-        this.handleGotMessageSize()
     }
 
     private handleGotMessageSize() {
@@ -153,7 +152,7 @@ export default class Parser extends EventEmitter {
 
         this.data = this.data.slice(reader.pos)
 
-        Logger.verbose(`Proto size: ${this.messageSize}`)
+        Logger.debug(`Proto size: ${this.messageSize}`)
 
         if (this.messageSize > 0) {
             this.state = ProcessingState.MCS_PROTO_BYTES
@@ -180,7 +179,7 @@ export default class Parser extends EventEmitter {
 
         if (this.data.length < this.messageSize) {
             // Continue reading data.
-            Logger.verbose(`Continuing data read. Buffer size is ${this.data.length}, expecting ${this.messageSize}`)
+            Logger.debug(`Continuing data read. Buffer size is ${this.data.length}, expecting ${this.messageSize}`)
             this.state = ProcessingState.MCS_PROTO_BYTES
             this.waitForData()
             return
@@ -204,7 +203,7 @@ export default class Parser extends EventEmitter {
                 Logger.error('Unexpected login response')
             } else {
                 this.handshakeComplete = true
-                Logger.verbose('GCM Handshake complete.')
+                Logger.debug('GCM Handshake complete.')
             }
         }
 
