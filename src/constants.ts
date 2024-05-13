@@ -4,19 +4,19 @@ export enum ProcessingState {
     MCS_VERSION_TAG_AND_SIZE = 0,
     // Processing the tag and size packets (assuming minimum length size
     // packet). Used for normal messages.
-    MCS_TAG_AND_SIZE         = 1,
+    MCS_TAG_AND_SIZE = 1,
     // Processing the size packet alone.
-    MCS_SIZE                 = 2,
+    MCS_SIZE = 2,
     // Processing the protocol buffer bytes (for those messages with non-zero
     // sizes).
-    MCS_PROTO_BYTES          = 3,
+    MCS_PROTO_BYTES = 3,
 }
 
 export enum Variables {
     // # of bytes a MCS version packet consumes.
     kVersionPacketLen = 1,
     // # of bytes a tag packet consumes.
-    kTagPacketLen     = 1,
+    kTagPacketLen = 1,
     // Max # of bytes a length packet consumes. A Varint32 can consume up to 5 bytes
     // (the msb in each byte is reserved for denoting whether more bytes follow).
     // Although the protocol only allows for 4KiB payloads currently, and the socket
@@ -34,23 +34,23 @@ export enum Variables {
 // WARNING: the order of these tags must remain the same, as the tag values
 // must be consistent with those used on the server.
 export enum MCSProtoTag {
-    kHeartbeatPingTag       = 0,
-    kHeartbeatAckTag        = 1,
-    kLoginRequestTag        = 2,
-    kLoginResponseTag       = 3,
-    kCloseTag               = 4,
-    kMessageStanzaTag       = 5,
-    kPresenceStanzaTag      = 6,
-    kIqStanzaTag            = 7,
-    kDataMessageStanzaTag   = 8,
+    kHeartbeatPingTag = 0,
+    kHeartbeatAckTag = 1,
+    kLoginRequestTag = 2,
+    kLoginResponseTag = 3,
+    kCloseTag = 4,
+    kMessageStanzaTag = 5,
+    kPresenceStanzaTag = 6,
+    kIqStanzaTag = 7,
+    kDataMessageStanzaTag = 8,
     kBatchPresenceStanzaTag = 9,
-    kStreamErrorStanzaTag   = 10,
-    kHttpRequestTag         = 11,
-    kHttpResponseTag        = 12,
-    kBindAccountRequestTag  = 13,
+    kStreamErrorStanzaTag = 10,
+    kHttpRequestTag = 11,
+    kHttpResponseTag = 12,
+    kBindAccountRequestTag = 13,
     kBindAccountResponseTag = 14,
-    kTalkMetadataTag        = 15,
-    kNumProtoTypes          = 16,
+    kTalkMetadataTag = 15,
+    kNumProtoTypes = 16,
 }
 
 export enum GcmRequestConstants {
@@ -87,8 +87,52 @@ export enum GcmRequestStatus {
     STATUS_COUNT
 }
 
-export enum LogLevels {
-    NONE = 0,
-    DEBUG,
-    VERBOSE
+/**
+ * enum values correspond to the type of device.
+ * Used in the AndroidCheckinProto and Device proto.
+ */
+export enum DeviceType {
+    /** DEVICE_ANDROID_OS - Android Device */
+    DEVICE_ANDROID_OS = 1,
+    /** DEVICE_IOS_OS - Apple IOS device */
+    DEVICE_IOS_OS = 2,
+    /** DEVICE_CHROME_BROWSER - Chrome browser - Not Chrome OS.  No hardware records. */
+    DEVICE_CHROME_BROWSER = 3,
+    /** DEVICE_CHROME_OS - Chrome OS */
+    DEVICE_CHROME_OS = 4,
+    UNRECOGNIZED = -1
+}
+
+/** Build characteristics unique to the Chrome browser, and Chrome OS */
+export interface ChromeBuildProto {
+    /** The platform of the device. */
+    platform: ChromeBuildProtoPlatform
+    /** The Chrome instance's version. */
+    chrome_version: string
+    /** The Channel (build type) of Chrome. */
+    channel: ChromeBuildProtoChannel
+}
+
+export enum ChromeBuildProtoPlatform {
+    PLATFORM_WIN = 1,
+    PLATFORM_MAC = 2,
+    PLATFORM_LINUX = 3,
+    PLATFORM_CROS = 4,
+    PLATFORM_IOS = 5,
+    /**
+     * PLATFORM_ANDROID - Just a placeholder. Likely don't need it due to the presence of the
+     * Android GCM on phone/tablet devices.
+     */
+    PLATFORM_ANDROID = 6,
+    UNRECOGNIZED = -1
+}
+
+export enum ChromeBuildProtoChannel {
+    CHANNEL_STABLE = 1,
+    CHANNEL_BETA = 2,
+    CHANNEL_DEV = 3,
+    CHANNEL_CANARY = 4,
+    /** CHANNEL_UNKNOWN - for tip of tree or custom builds */
+    CHANNEL_UNKNOWN = 5,
+    UNRECOGNIZED = -1
 }
