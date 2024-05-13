@@ -39,7 +39,6 @@ interface ClientConfig {
     chromeId?: string // Default - 'org.chromium.linux'
     chromeVersion?: string // Default - '94.0.4606.51'
     debug?: boolean // Enables debug console logs
-    vapidKey?: string // Default - default firebase VAPID key
     heartbeatIntervalMs?: number // Default - 5 * 60 * 1000
     firebase: FirebaseConfig // Full client firebase credentials are now needed
 }

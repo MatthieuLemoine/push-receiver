@@ -41,7 +41,7 @@ export default class PushSender {
         this.#clientEmail = serviceAccount.client_email
     }
 
-    createAuthJwt_(): string {
+    #createAuthJwt(): string {
         const claims = {
             scope: [
                 'https://www.googleapis.com/auth/cloud-platform',
@@ -63,10 +63,10 @@ export default class PushSender {
         });
     }
 
-    async getAccessToken(): Promise<GoogleOAuthAccessToken> {
+    async #getAccessToken(): Promise<GoogleOAuthAccessToken> {
         if (this.#accessToken && this.#accessToken.generated_at + this.#accessToken.expires_in > new Date().getTime()) return this.#accessToken;
         
-        const token = this.createAuthJwt_();
+        const token = this.#createAuthJwt();
 
         const res = await request(`https://${GOOGLE_AUTH_TOKEN_HOST}${GOOGLE_AUTH_TOKEN_PATH}`, {
             method: 'POST',
@@ -88,7 +88,7 @@ export default class PushSender {
     }
 
     async send(message: Types.MessageToSend, fcmToken: string): Promise<void> {
-        const serverAuthToken = await this.getAccessToken()
+        const serverAuthToken = await this.#getAccessToken()
 
         return request(`${FCM_API}${this.#projectId}/messages:send`, {
             method: 'POST',

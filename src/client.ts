@@ -26,24 +26,28 @@ const PORT = 5228
 const MAX_RETRY_TIMEOUT = 15
 
 export default class PushReceiver extends EventEmitter {
-    private config: Types.ClientConfig
-    private socket: tls.TLSSocket
-    private retryCount = 0
-    private retryTimeout: NodeJS.Timeout
-    private parser: Parser
-    private heartbeatTimer?: NodeJS.Timeout
-    private heartbeatTimeout?: NodeJS.Timeout
-    private streamId = 0
-    private lastStreamIdReported = -1
+    #config: Types.ClientConfig
+    #socket: tls.TLSSocket
+    #retryCount = 0
+    #retryTimeout: NodeJS.Timeout
+    #parser: Parser
+    #heartbeatTimer?: NodeJS.Timeout
+    #heartbeatTimeout?: NodeJS.Timeout
+    #streamId = 0
+    #lastStreamIdReported = -1
 
-    public persistentIds: Types.PersistentId[]
+    persistentIds: Types.PersistentId[]
+
+    get fcmToken() {
+        return this.#config.credentials?.fcm?.token
+    }
 
     constructor(config: Types.ClientConfig) {
         super()
 
         Logger.debug('constructor', config)
 
-        this.config = {
+        this.#config = {
             bundleId: 'receiver.push.com',
             chromeId: 'org.chromium.linux',
             chromeVersion: '94.0.4606.51',
@@ -53,80 +57,80 @@ export default class PushReceiver extends EventEmitter {
             ...config
         }
 
-        this.persistentIds = this.config.persistentIds
+        this.persistentIds = this.#config.persistentIds
     }
 
-    public setDebug(enabled?: boolean) {
+    setDebug(enabled?: boolean) {
         Logger.setDebug(enabled)
     }
 
-    public on(event: 'ON_MESSAGE_RECEIVED', listener: (data: Types.MessageEnvelope) => void): this
-    public on(event: 'ON_CREDENTIALS_CHANGE', listener: (data: Types.EventChangeCredentials) => void): this
-    public on(event: 'ON_CONNECT', listener: (data: void) => void): this
-    public on(event: 'ON_DISCONNECT', listener: (data: void) => void): this
-    public on(event: 'ON_READY', listener: (data: void) => void): this
-    public on(event: 'ON_HEARTBEAT', listener: (data: void) => void): this
-    public on(event: unknown, listener: unknown): this {
+    on(event: 'ON_MESSAGE_RECEIVED', listener: (data: Types.MessageEnvelope) => void): this
+    on(event: 'ON_CREDENTIALS_CHANGE', listener: (data: Types.EventChangeCredentials) => void): this
+    on(event: 'ON_CONNECT', listener: (data: void) => void): this
+    on(event: 'ON_DISCONNECT', listener: (data: void) => void): this
+    on(event: 'ON_READY', listener: (data: void) => void): this
+    on(event: 'ON_HEARTBEAT', listener: (data: void) => void): this
+    on(event: unknown, listener: unknown): this {
         return EventEmitter.prototype.on.apply(this, [event, listener])
     }
 
-    public off(event: 'ON_MESSAGE_RECEIVED', listener: (data: Types.MessageEnvelope) => void): this
-    public off(event: 'ON_CREDENTIALS_CHANGE', listener: (data: Types.EventChangeCredentials) => void): this
-    public off(event: 'ON_CONNECT', listener: (data: void) => void): this
-    public off(event: 'ON_DISCONNECT', listener: (data: void) => void): this
-    public off(event: 'ON_READY', listener: (data: void) => void): this
-    public off(event: 'ON_HEARTBEAT', listener: (data: void) => void): this
-    public off(event: unknown, listener: unknown): this {
+    off(event: 'ON_MESSAGE_RECEIVED', listener: (data: Types.MessageEnvelope) => void): this
+    off(event: 'ON_CREDENTIALS_CHANGE', listener: (data: Types.EventChangeCredentials) => void): this
+    off(event: 'ON_CONNECT', listener: (data: void) => void): this
+    off(event: 'ON_DISCONNECT', listener: (data: void) => void): this
+    off(event: 'ON_READY', listener: (data: void) => void): this
+    off(event: 'ON_HEARTBEAT', listener: (data: void) => void): this
+    off(event: unknown, listener: unknown): this {
         return EventEmitter.prototype.off.apply(this, [event, listener])
     }
 
-    public emit(event: 'ON_MESSAGE_RECEIVED', data: Types.MessageEnvelope): boolean
-    public emit(event: 'ON_CREDENTIALS_CHANGE', data: Types.EventChangeCredentials): boolean
-    public emit(event: 'ON_CONNECT'): boolean
-    public emit(event: 'ON_DISCONNECT'): boolean
-    public emit(event: 'ON_READY'): boolean
-    public emit(event: 'ON_HEARTBEAT'): boolean
-    public emit(event: unknown, ...args: unknown[]): boolean {
+    emit(event: 'ON_MESSAGE_RECEIVED', data: Types.MessageEnvelope): boolean
+    emit(event: 'ON_CREDENTIALS_CHANGE', data: Types.EventChangeCredentials): boolean
+    emit(event: 'ON_CONNECT'): boolean
+    emit(event: 'ON_DISCONNECT'): boolean
+    emit(event: 'ON_READY'): boolean
+    emit(event: 'ON_HEARTBEAT'): boolean
+    emit(event: unknown, ...args: unknown[]): boolean {
         Logger.debug('emit', event, ...args)
         return EventEmitter.prototype.emit.apply(this, [event, ...args])
     }
 
-    public onNotification(listener: (data: Types.MessageEnvelope) => void): Types.DisposeFunction {
+    onNotification(listener: (data: Types.MessageEnvelope) => void): Types.DisposeFunction {
         this.on('ON_MESSAGE_RECEIVED', listener)
         return () => this.off('ON_MESSAGE_RECEIVED', listener)
     }
 
-    public onCredentialsChanged(listener: (data: Types.EventChangeCredentials) => void): Types.DisposeFunction {
+    onCredentialsChanged(listener: (data: Types.EventChangeCredentials) => void): Types.DisposeFunction {
         this.on('ON_CREDENTIALS_CHANGE', listener)
         return () => this.off('ON_CREDENTIALS_CHANGE', listener)
     }
 
-    public onReady(listener: () => void): Types.DisposeFunction {
+    onReady(listener: () => void): Types.DisposeFunction {
         this.on('ON_READY', listener)
         return () => this.off('ON_READY', listener)
     }
 
-    public connect = async (): Promise<void> => {
-        if (this.socket) return
+    connect = async (): Promise<void> => {
+        if (this.#socket) return
 
         await this.registerIfNeeded()
 
         Logger.debug('connect')
 
-        this.lastStreamIdReported = -1
+        this.#lastStreamIdReported = -1
 
-        this.socket = new tls.TLSSocket(null)
-        this.socket.setKeepAlive(true)
-        this.socket.on('connect', this.handleSocketConnect)
-        this.socket.on('close', this.handleSocketClose)
-        this.socket.on('error', this.handleSocketError)
-        this.socket.connect({ host: HOST, port: PORT })
+        this.#socket = new tls.TLSSocket(null)
+        this.#socket.setKeepAlive(true)
+        this.#socket.on('connect', this.#handleSocketConnect.bind(this))
+        this.#socket.on('close', this.#handleSocketClose.bind(this))
+        this.#socket.on('error', this.#handleSocketError.bind(this))
+        this.#socket.connect({ host: HOST, port: PORT })
 
-        this.parser = new Parser(this.socket)
-        this.parser.on('message', this.handleMessage)
-        this.parser.on('error', this.handleParserError)
+        this.#parser = new Parser(this.#socket)
+        this.#parser.on('message', this.#handleMessage.bind(this))
+        this.#parser.on('error', this.#handleParserError.bind(this))
 
-        this.sendLogin()
+        this.#sendLogin()
 
         return new Promise((res) => {
             const dispose = this.onReady(() => {
@@ -136,117 +140,126 @@ export default class PushReceiver extends EventEmitter {
         })
     }
 
-    public destroy = () => {
-        clearTimeout(this.retryTimeout)
-        this.clearHeartbeat()
+    destroy = () => {
+        clearTimeout(this.#retryTimeout)
+        this.#clearHeartbeat()
 
-        if (this.socket) {
-            this.socket.off('close', this.handleSocketClose)
-            this.socket.off('error', this.handleSocketError)
-            this.socket.destroy()
-            this.socket = null
+        if (this.#socket) {
+            this.#socket.destroy()
+            this.#socket = null
         }
 
-        if (this.parser) {
-            this.parser.off('error', this.handleParserError)
-            this.parser.destroy()
-            this.parser = null
+        if (this.#parser) {
+            this.#parser.destroy()
+            this.#parser = null
         }
     }
 
-    public async registerIfNeeded(): Promise<Types.Credentials> {
-        let change = false
-        const credentials: Types.Credentials = this.config.credentials || {
-            keys: null,
-            gcm: null,
-            fcm: null,
+    get #configMetaData() {
+        return {
+            bundleId: this.#config.bundleId,
+            projectId: this.#config.firebase.projectId,
+            vapidKey: this.#config.vapidKey
         }
-        
-        if (!credentials?.gcm) {
-            credentials.gcm = await registerGCM(this.config)
-            change = true
-        } else {
-            Logger.debug('checkin')
-            await checkIn(this.config)
-        }
-
-        if (!credentials.keys) {
-            credentials.keys = await createKeys()
-            change = true
-        }
-
-        if (!credentials?.fcm || !credentials.fcm.installation) {
-            credentials.fcm = await registerFCM(credentials.gcm, credentials.keys, this.config)
-            change = true
-        }
-
-        if (change) {
-            this.emit('ON_CREDENTIALS_CHANGE', {
-                oldCredentials: this.config.credentials,
-                newCredentials: credentials
-            })
-
-            this.config.credentials = credentials
-            Logger.debug('got credentials', credentials)
-        }
-
-        return this.config.credentials
     }
 
-    private clearHeartbeat() {
-        clearTimeout(this.heartbeatTimer)
-        this.heartbeatTimer = undefined
+    checkCredentials(credentials: Types.Credentials) {
+        // Structure check
+        if (!credentials) return false
+        if (!credentials.fcm || !credentials.gcm || !credentials.keys) return false
+        if (!credentials.fcm.installation) return false
+        if (!credentials.config) return false
 
-        clearTimeout(this.heartbeatTimeout)
-        this.heartbeatTimeout = undefined
+        // Config data
+        if (JSON.stringify(credentials.config) !== JSON.stringify(this.#configMetaData)) return false
+
+        return true
     }
 
-    private startHeartbeat() {
-        this.clearHeartbeat()
+    async registerIfNeeded(): Promise<Types.Credentials> {
+        if (this.checkCredentials(this.#config.credentials)) {
+            await checkIn(this.#config)
 
-        if (!this.config.heartbeatIntervalMs) return
+            return this.#config.credentials
+        }
 
-        this.heartbeatTimer = setTimeout(this.sendHeartbeatPing.bind(this), this.config.heartbeatIntervalMs)
-        this.heartbeatTimeout = setTimeout(this.socketRetry.bind(this), this.config.heartbeatIntervalMs * 2)
+        const keys = await createKeys()
+        const gcm = await registerGCM(this.#config)
+        const fcm = await registerFCM(gcm, keys, this.#config)
+
+        const credentials: Types.Credentials = {
+            keys,
+            gcm,
+            fcm,
+            config: this.#configMetaData,
+        }
+
+        this.emit('ON_CREDENTIALS_CHANGE', {
+            oldCredentials: this.#config.credentials,
+            newCredentials: credentials
+        })
+
+        this.#config.credentials = credentials
+
+        Logger.debug('got credentials', credentials)
+
+        return this.#config.credentials
     }
 
-    private handleSocketConnect = (): void => {
-        this.retryCount = 0
+    #clearHeartbeat() {
+        clearTimeout(this.#heartbeatTimer)
+        this.#heartbeatTimer = undefined
+
+        clearTimeout(this.#heartbeatTimeout)
+        this.#heartbeatTimeout = undefined
+    }
+
+    #startHeartbeat() {
+        this.#clearHeartbeat()
+
+        if (!this.#config.heartbeatIntervalMs) return
+
+        this.#heartbeatTimer = setTimeout(this.#sendHeartbeatPing.bind(this), this.#config.heartbeatIntervalMs)
+        this.#heartbeatTimeout = setTimeout(this.#socketRetry.bind(this), this.#config.heartbeatIntervalMs * 2)
+    }
+
+    #handleSocketConnect = (): void => {
+        this.#retryCount = 0
         this.emit('ON_CONNECT')
-        this.startHeartbeat()
+        this.#startHeartbeat()
     }
 
-    private handleSocketClose = (): void => {
+    #handleSocketClose = (): void => {
         this.emit('ON_DISCONNECT')
-        this.clearHeartbeat()
-        this.socketRetry()
+        this.#clearHeartbeat()
+        this.#socketRetry()
     }
 
-    private handleSocketError = (err: Error): void => {
+    #handleSocketError = (err: Error): void => {
         Logger.error(err)
         // ignore, the close handler takes care of retry
     }
 
-    private socketRetry() {
+    #socketRetry() {
         this.destroy()
-        const timeout = Math.min(++this.retryCount, MAX_RETRY_TIMEOUT) * 1000
-        this.retryTimeout = setTimeout(this.connect, timeout)
+        const timeout = Math.min(++this.#retryCount, MAX_RETRY_TIMEOUT) * 1000
+        this.#retryTimeout = setTimeout(this.connect, timeout)
     }
 
-    private getStreamId(): number {
-        this.lastStreamIdReported = this.streamId
-        return this.streamId
+    #getStreamId(): number {
+        this.#lastStreamIdReported = this.#streamId
+        return this.#streamId
     }
 
-    private newStreamIdAvailable(): boolean {
-        return this.lastStreamIdReported != this.streamId
+    #newStreamIdAvailable(): boolean {
+        return this.#lastStreamIdReported != this.#streamId
     }
 
-    private sendHeartbeatPing() {
+    #sendHeartbeatPing() {
         const heartbeatPingRequest: Record<string, unknown> = {}
 
-        if (this.newStreamIdAvailable()) {
-            heartbeatPingRequest.last_stream_id_received = this.getStreamId()
+        if (this.#newStreamIdAvailable()) {
+            heartbeatPingRequest.last_stream_id_received = this.#getStreamId()
         }
 
         Logger.debug('Heartbeat send pong', heartbeatPingRequest)
@@ -262,17 +275,17 @@ export default class PushReceiver extends EventEmitter {
 
         Logger.debug('HEARTBEAT sending PING', heartbeatPingRequest)
 
-        this.socket.write(Buffer.concat([
+        this.#socket.write(Buffer.concat([
             Buffer.from([MCSProtoTag.kHeartbeatPingTag]),
             buffer,
         ]))
     }
 
-    private sendHeartbeatPong(object) {
+    #sendHeartbeatPong(object) {
         const heartbeatAckRequest: Record<string, any> = {}
 
-        if (this.newStreamIdAvailable()) {
-            heartbeatAckRequest.last_stream_id_received = this.getStreamId()
+        if (this.#newStreamIdAvailable()) {
+            heartbeatAckRequest.last_stream_id_received = this.#getStreamId()
         }
 
         if (object?.status) {
@@ -291,21 +304,21 @@ export default class PushReceiver extends EventEmitter {
 
         Logger.debug('HEARTBEAT sending PONG', heartbeatAckRequest)
 
-        this.socket.write(Buffer.concat([
+        this.#socket.write(Buffer.concat([
             Buffer.from([MCSProtoTag.kHeartbeatAckTag]),
             buffer
         ]))
     }
 
-    private sendLogin() {
-        const gcm = this.config.credentials.gcm
+    #sendLogin() {
+        const gcm = this.#config.credentials.gcm
         const LoginRequestType = Protos.mcs_proto.LoginRequest
         const hexAndroidId = Long.fromString(gcm.androidId).toString(16)
         const loginRequest: mcs_proto.ILoginRequest = {
             adaptiveHeartbeat: false,
             authService: 2,
             authToken: gcm.securityToken,
-            id: `chrome-${this.config.chromeVersion}`,
+            id: `chrome-${this.#config.chromeVersion}`,
             domain: 'mcs.android.com',
             deviceId: `android-${hexAndroidId}`,
             networkType: 1,
@@ -315,14 +328,14 @@ export default class PushReceiver extends EventEmitter {
             setting: [{ name: 'new_vc', value: '1' }],
             clientEvent: [],
             // Id of the last notification received
-            receivedPersistentId: this.config.persistentIds,
+            receivedPersistentId: this.#config.persistentIds,
         }
 
-        if (this.config.heartbeatIntervalMs) {
+        if (this.#config.heartbeatIntervalMs) {
             loginRequest.heartbeatStat = {
                 ip: '',
                 timeout: true,
-                intervalMs: this.config.heartbeatIntervalMs,
+                intervalMs: this.#config.heartbeatIntervalMs,
             }
         }
 
@@ -333,32 +346,32 @@ export default class PushReceiver extends EventEmitter {
 
         const buffer = LoginRequestType.encodeDelimited(loginRequest).finish()
 
-        this.socket.write(Buffer.concat([
+        this.#socket.write(Buffer.concat([
             Buffer.from([Variables.kMCSVersion, MCSProtoTag.kLoginRequestTag]),
             buffer,
         ]))
     }
 
-    private handleMessage = ({ tag, object }: Types.DataPacket): void => {
+    #handleMessage = ({ tag, object }: Types.DataPacket): void => {
         // any message will reset the client side heartbeat timeout.
-        this.startHeartbeat()
+        this.#startHeartbeat()
 
         switch (tag) {
             case MCSProtoTag.kLoginResponseTag:
                 // clear persistent ids, as we just sent them to the server while logging in
-                this.config.persistentIds = []
+                this.#config.persistentIds = []
                 this.emit('ON_READY')
-                this.startHeartbeat()
+                this.#startHeartbeat()
                 break
 
             case MCSProtoTag.kDataMessageStanzaTag:
-                this.handleDataMessage(object)
+                this.#handleDataMessage(object)
                 break
 
             case MCSProtoTag.kHeartbeatPingTag:
                 this.emit('ON_HEARTBEAT')
                 Logger.debug('HEARTBEAT PING', object)
-                this.sendHeartbeatPong(object)
+                this.#sendHeartbeatPong(object)
                 break
 
             case MCSProtoTag.kHeartbeatAckTag:
@@ -368,7 +381,7 @@ export default class PushReceiver extends EventEmitter {
 
             case MCSProtoTag.kCloseTag:
                 Logger.debug('Close: Server requested close! message: ', JSON.stringify(object))
-                this.handleSocketClose()
+                this.#handleSocketClose()
                 break
 
             case MCSProtoTag.kLoginRequestTag:
@@ -376,7 +389,7 @@ export default class PushReceiver extends EventEmitter {
                 break
 
             case MCSProtoTag.kIqStanzaTag:
-                Logger.debug('IqStanza: If anyone knows what is this and how to respond, please let me know! - message: ', JSON.stringify(object))
+                Logger.debug('IqStanza: ', JSON.stringify(object))
                 // FIXME: If anyone knows what is this and how to respond, please let me know
                 break
 
@@ -387,17 +400,17 @@ export default class PushReceiver extends EventEmitter {
             // no default
         }
 
-        this.streamId++
+        this.#streamId++
     }
 
-    private handleDataMessage = (object): void => {
+    #handleDataMessage = (object): void => {
         if (this.persistentIds.includes(object.persistentId)) {
             return
         }
 
         let message
         try {
-            message = decrypt(object, this.config.credentials.keys)
+            message = decrypt(object, this.#config.credentials.keys)
         } catch (error) {
             switch (true) {
                 case error.message.includes('Unsupported state or unable to authenticate data'):
@@ -423,9 +436,9 @@ export default class PushReceiver extends EventEmitter {
         })
     }
 
-    private handleParserError = (error) => {
+    #handleParserError = (error) => {
         Logger.error(error)
-        this.socketRetry()
+        this.#socketRetry()
     }
 }
 

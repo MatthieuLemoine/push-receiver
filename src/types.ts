@@ -2,6 +2,12 @@ export interface Credentials {
     gcm: GcmData
     fcm: FcmData
     keys: Keys
+    config: {
+        projectId: string
+        vapidKey: string
+        bundleId: string
+    }
+
 }
 
 export interface InstallationData {
