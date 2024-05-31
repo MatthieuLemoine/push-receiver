@@ -20,9 +20,8 @@ npm i -S @eneris/push-receiver
 
 ## Requirements 
 
-- Node v16 (async/await/randomUUID support)
-- Firebase sender id to receive notification
-- Firebase serverKey to send notification (optional)
+- Node v20 (async/await/randomUUID/fetch support)
+- Firebase credentials from `Step 1` - https://firebase.google.com/docs/web/setup
 
 ## Acknowledgements 
 - https://github.com/MatthieuLemoine - for creating initial module on wich uppon in iterated
