@@ -8,6 +8,7 @@ const FCM_REGISTRATION = 'https://fcmregistrations.googleapis.com/v1/'
 const FCM_INSTALLATION = 'https://firebaseinstallations.googleapis.com/v1/'
 const AUTH_VERSION = 'FIS_v2'
 const SDK_VERSION = 'w:0.6.6'
+const DEFAULT_VAPID = 'BDOU99-h67HcA6JeFXHbSNMu7e2yNNu3RzoMj8TM4W88jITfq7ZmPvIM1Iv-4_l2LxQcYwhqby2xGpWwzjfAnG4'
 
 // TODO: FIXME it is optional to send it but better to implement proper heatbeat in the future
 const getEmptyHeatbeat = () => btoa(JSON.stringify({ heartbeats: [], version: 2 })).toString()
@@ -81,13 +82,14 @@ export async function registerFCM(gcmData: Types.GcmData, installation: Types.In
         },
         body: JSON.stringify({
             web: {
-                applicationPubKey: config.vapidKey,
+                // Include VAPID only if it's not default key, otherwise FCM registration will fail
+                ...config.vapidKey !== DEFAULT_VAPID ? { applicationPubKey: config.vapidKey } : {},
                 auth: encodeBase64URL(keys.authSecret),
                 /**
                  * TODO
                  * Shouldn't endpoint be migrated to v1 too??? But official JS module still uses the old one...
                  * https://firebase.google.com/docs/cloud-messaging/migrate-v1
-                 * Currently not working with 
+                 * Currently not working with
                  * Works - https://fcm.googleapis.com/fcm/send
                  * Does not work - https://fcm.googleapis.com/v1/projects/{projectId}/messages:send
                  */
