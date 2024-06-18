@@ -6,7 +6,6 @@ import Protos from './protos'
 import Logger from './utils/logger'
 
 import type * as Types from './types'
-import { toBase64 } from './utils/base64'
 
 const REGISTER_URL = 'https://android.clients.google.com/c2dm/register3'
 const CHECKIN_URL = 'https://android.clients.google.com/checkin'

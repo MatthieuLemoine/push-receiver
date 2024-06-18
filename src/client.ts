@@ -51,7 +51,7 @@ export default class PushReceiver extends EventEmitter {
             bundleId: 'receiver.push.com',
             chromeId: 'org.chromium.linux',
             chromeVersion: '94.0.4606.51',
-            vapidKey: '', // Default Firebase VAPID
+            vapidKey: '',
             persistentIds: [],
             heartbeatIntervalMs: 5 * 60 * 1000, // 5 min
             ...config

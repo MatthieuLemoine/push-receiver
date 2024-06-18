@@ -8,7 +8,6 @@ const FCM_REGISTRATION = 'https://fcmregistrations.googleapis.com/v1/'
 const FCM_INSTALLATION = 'https://firebaseinstallations.googleapis.com/v1/'
 const AUTH_VERSION = 'FIS_v2'
 const SDK_VERSION = 'w:0.6.6'
-const DEFAULT_VAPID = 'BDOU99-h67HcA6JeFXHbSNMu7e2yNNu3RzoMj8TM4W88jITfq7ZmPvIM1Iv-4_l2LxQcYwhqby2xGpWwzjfAnG4'
 
 // TODO: FIXME it is optional to send it but better to implement proper heatbeat in the future
 const getEmptyHeatbeat = () => btoa(JSON.stringify({ heartbeats: [], version: 2 })).toString()
