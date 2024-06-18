@@ -83,7 +83,7 @@ export async function registerFCM(gcmData: Types.GcmData, installation: Types.In
         body: JSON.stringify({
             web: {
                 // Include VAPID only if it's not default key, otherwise FCM registration will fail
-                ...config.vapidKey !== DEFAULT_VAPID ? { applicationPubKey: config.vapidKey } : {},
+                applicationPubKey: config.vapidKey || undefined,
                 auth: encodeBase64URL(keys.authSecret),
                 /**
                  * TODO
