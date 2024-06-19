@@ -81,13 +81,14 @@ export async function registerFCM(gcmData: Types.GcmData, installation: Types.In
         },
         body: JSON.stringify({
             web: {
-                applicationPubKey: config.vapidKey,
+                // Include VAPID only if it's not default key, otherwise FCM registration will fail
+                applicationPubKey: config.vapidKey || undefined,
                 auth: encodeBase64URL(keys.authSecret),
                 /**
                  * TODO
                  * Shouldn't endpoint be migrated to v1 too??? But official JS module still uses the old one...
                  * https://firebase.google.com/docs/cloud-messaging/migrate-v1
-                 * Currently not working with 
+                 * Currently not working with
                  * Works - https://fcm.googleapis.com/fcm/send
                  * Does not work - https://fcm.googleapis.com/v1/projects/{projectId}/messages:send
                  */
