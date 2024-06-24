@@ -45,6 +45,7 @@ export default class PushReceiver extends EventEmitter {
     constructor(config: Types.ClientConfig) {
         super()
 
+        this.setDebug(config.debug)
         Logger.debug('constructor', config)
 
         this.#config = {
