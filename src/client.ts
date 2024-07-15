@@ -1,4 +1,3 @@
-import { EventEmitter } from 'events'
 import Long from 'long'
 import ProtobufJS from 'protobufjs'
 import tls from 'tls'
@@ -9,6 +8,8 @@ import Parser from './parser'
 import decrypt from './utils/decrypt'
 import Logger from './utils/logger'
 import Protos, { mcs_proto } from './protos'
+
+import Emitter from './emitter'
 
 import { Variables, MCSProtoTag } from './constants'
 
@@ -25,7 +26,16 @@ const HOST = 'mtalk.google.com'
 const PORT = 5228
 const MAX_RETRY_TIMEOUT = 15
 
-export default class PushReceiver extends EventEmitter {
+interface ClientEvents {
+    ON_MESSAGE_RECEIVED: (data: Types.MessageEnvelope) => void
+    ON_CREDENTIALS_CHANGE: (data: Types.EventChangeCredentials) => void
+    ON_CONNECT: (data: void) => void
+    ON_DISCONNECT: (data: void) => void
+    ON_READY: (data: void) => void
+    ON_HEARTBEAT: (data: void) => void
+}
+
+export default class PushReceiver extends Emitter<ClientEvents> {
     #config: Types.ClientConfig
     #socket: tls.TLSSocket
     #retryCount = 0
@@ -65,50 +75,16 @@ export default class PushReceiver extends EventEmitter {
         Logger.setDebug(enabled)
     }
 
-    on(event: 'ON_MESSAGE_RECEIVED', listener: (data: Types.MessageEnvelope) => void): this
-    on(event: 'ON_CREDENTIALS_CHANGE', listener: (data: Types.EventChangeCredentials) => void): this
-    on(event: 'ON_CONNECT', listener: (data: void) => void): this
-    on(event: 'ON_DISCONNECT', listener: (data: void) => void): this
-    on(event: 'ON_READY', listener: (data: void) => void): this
-    on(event: 'ON_HEARTBEAT', listener: (data: void) => void): this
-    on(event: unknown, listener: unknown): this {
-        return EventEmitter.prototype.on.apply(this, [event, listener])
-    }
-
-    off(event: 'ON_MESSAGE_RECEIVED', listener: (data: Types.MessageEnvelope) => void): this
-    off(event: 'ON_CREDENTIALS_CHANGE', listener: (data: Types.EventChangeCredentials) => void): this
-    off(event: 'ON_CONNECT', listener: (data: void) => void): this
-    off(event: 'ON_DISCONNECT', listener: (data: void) => void): this
-    off(event: 'ON_READY', listener: (data: void) => void): this
-    off(event: 'ON_HEARTBEAT', listener: (data: void) => void): this
-    off(event: unknown, listener: unknown): this {
-        return EventEmitter.prototype.off.apply(this, [event, listener])
-    }
-
-    emit(event: 'ON_MESSAGE_RECEIVED', data: Types.MessageEnvelope): boolean
-    emit(event: 'ON_CREDENTIALS_CHANGE', data: Types.EventChangeCredentials): boolean
-    emit(event: 'ON_CONNECT'): boolean
-    emit(event: 'ON_DISCONNECT'): boolean
-    emit(event: 'ON_READY'): boolean
-    emit(event: 'ON_HEARTBEAT'): boolean
-    emit(event: unknown, ...args: unknown[]): boolean {
-        Logger.debug('emit', event, ...args)
-        return EventEmitter.prototype.emit.apply(this, [event, ...args])
-    }
-
     onNotification(listener: (data: Types.MessageEnvelope) => void): Types.DisposeFunction {
-        this.on('ON_MESSAGE_RECEIVED', listener)
-        return () => this.off('ON_MESSAGE_RECEIVED', listener)
+        return this.on('ON_MESSAGE_RECEIVED', listener)
     }
 
     onCredentialsChanged(listener: (data: Types.EventChangeCredentials) => void): Types.DisposeFunction {
-        this.on('ON_CREDENTIALS_CHANGE', listener)
-        return () => this.off('ON_CREDENTIALS_CHANGE', listener)
+        return this.on('ON_CREDENTIALS_CHANGE', listener)
     }
 
     onReady(listener: () => void): Types.DisposeFunction {
-        this.on('ON_READY', listener)
-        return () => this.off('ON_READY', listener)
+        return this.on('ON_READY', listener)
     }
 
     connect = async (): Promise<void> => {
@@ -122,14 +98,14 @@ export default class PushReceiver extends EventEmitter {
 
         this.#socket = new tls.TLSSocket(null)
         this.#socket.setKeepAlive(true)
-        this.#socket.on('connect', this.#handleSocketConnect.bind(this))
-        this.#socket.on('close', this.#handleSocketClose.bind(this))
-        this.#socket.on('error', this.#handleSocketError.bind(this))
+        this.#socket.on('connect', () => this.#handleSocketConnect())
+        this.#socket.on('close', () => this.#handleSocketClose())
+        this.#socket.on('error', (err) => this.#handleSocketError(err))
         this.#socket.connect({ host: HOST, port: PORT })
 
         this.#parser = new Parser(this.#socket)
-        this.#parser.on('message', this.#handleMessage.bind(this))
-        this.#parser.on('error', this.#handleParserError.bind(this))
+        this.#parser.on('message', (data) => this.#handleMessage(data))
+        this.#parser.on('error', (err) => this.#handleParserError(err))
 
         this.#sendLogin()
 
@@ -220,8 +196,8 @@ export default class PushReceiver extends EventEmitter {
 
         if (!this.#config.heartbeatIntervalMs) return
 
-        this.#heartbeatTimer = setTimeout(this.#sendHeartbeatPing.bind(this), this.#config.heartbeatIntervalMs)
-        this.#heartbeatTimeout = setTimeout(this.#socketRetry.bind(this), this.#config.heartbeatIntervalMs * 2)
+        this.#heartbeatTimer = setTimeout(this.#sendHeartbeatPing, this.#config.heartbeatIntervalMs)
+        this.#heartbeatTimeout = setTimeout(this.#socketRetry, this.#config.heartbeatIntervalMs * 2)
     }
 
     #handleSocketConnect = (): void => {
