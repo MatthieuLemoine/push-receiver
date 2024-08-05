@@ -196,8 +196,8 @@ export default class PushReceiver extends Emitter<ClientEvents> {
 
         if (!this.#config.heartbeatIntervalMs) return
 
-        this.#heartbeatTimer = setTimeout(this.#sendHeartbeatPing, this.#config.heartbeatIntervalMs)
-        this.#heartbeatTimeout = setTimeout(this.#socketRetry, this.#config.heartbeatIntervalMs * 2)
+        this.#heartbeatTimer = setTimeout(() => this.#sendHeartbeatPing(), this.#config.heartbeatIntervalMs)
+        this.#heartbeatTimeout = setTimeout(() => this.#socketRetry(), this.#config.heartbeatIntervalMs * 2)
     }
 
     #handleSocketConnect = (): void => {
@@ -220,7 +220,7 @@ export default class PushReceiver extends Emitter<ClientEvents> {
     #socketRetry() {
         this.destroy()
         const timeout = Math.min(++this.#retryCount, MAX_RETRY_TIMEOUT) * 1000
-        this.#retryTimeout = setTimeout(this.connect, timeout)
+        this.#retryTimeout = setTimeout(() => this.connect(), timeout)
     }
 
     #getStreamId(): number {
