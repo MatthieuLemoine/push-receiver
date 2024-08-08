@@ -122,6 +122,7 @@ export default class PushReceiver extends Emitter<ClientEvents> {
         this.#clearHeartbeat()
 
         if (this.#socket) {
+            this.#socket.removeAllListeners()
             this.#socket.destroy()
             this.#socket = null
         }

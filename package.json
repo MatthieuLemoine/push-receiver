@@ -1,6 +1,6 @@
 {
     "name": "@eneris/push-receiver",
-    "version": "4.1.4",
+    "version": "4.1.6",
     "description": "A module to subscribe to GCM/FCM and receive notifications within a node process.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
@@ -41,15 +41,15 @@
     },
     "homepage": "https://github.com/eneris/push-receiver#readme",
     "devDependencies": {
-        "@types/node": "^20.14.5",
-        "@typescript-eslint/eslint-plugin": "^7.13.1",
-        "@typescript-eslint/parser": "^7.13.1",
-        "eslint": "^9.5.0",
+        "@types/node": "^22.1.0",
+        "@typescript-eslint/eslint-plugin": "^8.0.1",
+        "@typescript-eslint/parser": "^8.0.1",
+        "eslint": "^9.8.0",
         "protobufjs-cli": "^1.1.2",
-        "typescript": "^5.4.5"
+        "typescript": "^5.5.4"
     },
     "dependencies": {
-        "http_ece": "^1.2.0",
+        "http_ece": "^1.2.1",
         "jsonwebtoken": "^9.0.2",
         "long": "^5.2.3",
         "protobufjs": "^7.3.2"
