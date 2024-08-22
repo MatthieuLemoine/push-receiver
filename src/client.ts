@@ -8,6 +8,7 @@ import Parser from './parser'
 import decrypt from './utils/decrypt'
 import Logger from './utils/logger'
 import Protos, { mcs_proto } from './protos'
+import defer from './utils/defer'
 
 import Emitter from './emitter'
 
@@ -45,6 +46,7 @@ export default class PushReceiver extends Emitter<ClientEvents> {
     #heartbeatTimeout?: NodeJS.Timeout
     #streamId = 0
     #lastStreamIdReported = -1
+    #ready = defer()
 
     persistentIds: Types.PersistentId[]
 
@@ -69,6 +71,10 @@ export default class PushReceiver extends Emitter<ClientEvents> {
         }
 
         this.persistentIds = this.#config.persistentIds
+    }
+
+    get whenReady() {
+        return this.#ready.promise;
     }
 
     setDebug(enabled?: boolean) {
@@ -118,6 +124,8 @@ export default class PushReceiver extends Emitter<ClientEvents> {
     }
 
     destroy = () => {
+        this.#clearReady();
+
         clearTimeout(this.#retryTimeout)
         this.#clearHeartbeat()
 
@@ -182,6 +190,14 @@ export default class PushReceiver extends Emitter<ClientEvents> {
         Logger.debug('got credentials', credentials)
 
         return this.#config.credentials
+    }
+
+    #clearReady() {
+        if (!this.#ready.isResolved) {
+            this.#ready.reject(new Error('Client destroyed'))
+        }
+
+        this.#ready = defer()
     }
 
     #clearHeartbeat() {
@@ -340,6 +356,7 @@ export default class PushReceiver extends Emitter<ClientEvents> {
                 this.#config.persistentIds = []
                 this.emit('ON_READY')
                 this.#startHeartbeat()
+                this.#ready.resolve()
                 break
 
             case MCSProtoTag.kDataMessageStanzaTag:

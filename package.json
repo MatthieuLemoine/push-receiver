@@ -1,6 +1,6 @@
 {
     "name": "@eneris/push-receiver",
-    "version": "4.1.6",
+    "version": "4.2.0",
     "description": "A module to subscribe to GCM/FCM and receive notifications within a node process.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
