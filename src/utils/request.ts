@@ -15,16 +15,26 @@ export default function requestWithRety(url: string, options?: globalThis.Reques
 async function retry(retryCount = 0, url: string, options?: globalThis.RequestInit, maxRetries = 3): Promise<Response> {
     try {
         return await fetch(url, options)
-    } catch (e) {
-        const timeout = Math.min(retryCount * RETRY_STEP, MAX_RETRY_TIMEOUT)
-        Logger.debug(`Request failed : ${e.message}`)
-        Logger.debug(`Retrying in ${timeout} seconds`)
+            .then(async (response) => { // Serer responded
+                if (response.ok) return response
 
-        if (retryCount >= maxRetries) throw e
+                // Response not ok. This means server responded but with an error. We retry with increased retry count
+                const timeout = Math.min(retryCount * RETRY_STEP, MAX_RETRY_TIMEOUT)
 
-        await delay(timeout * 1000)
+                Logger.debug(`Request failed : ${response.statusText}`)
+                Logger.debug(`Retrying in ${timeout} seconds`)
 
-        return retry(retryCount + 1, url, options)
+                if (retryCount >= maxRetries) throw response.statusText
+
+                await delay(timeout * 1000)
+
+                return retry(retryCount + 1, url, options)
+            })
+    } catch (error) {
+        Logger.debug('Request failed with network error. Wait 10s and retry')
+        // Fetch throws only for network errors. In that case we wait a bit and retry without increasing the count
+        await delay(10_000) // 10 seconds
+        return retry(retryCount, url, options)
     }
 }
 
