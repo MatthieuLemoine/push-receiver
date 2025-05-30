@@ -131,6 +131,7 @@ export default class PushReceiver extends Emitter<ClientEvents> {
 
         if (this.#socket) {
             this.#socket.removeAllListeners()
+            this.#socket.end()
             this.#socket.destroy()
             this.#socket = null
         }
