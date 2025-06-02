@@ -2,10 +2,6 @@
 
 A library to subscribe to GCM/FCM and receive notifications within a node process.
 
-For [Electron](https://github.com/electron/electron), you can use [electron-push-receiver](https://github.com/MatthieuLemoine/electron-push-receiver) instead which provides a convenient wrapper.
-
-See [this blog post](https://medium.com/@MatthieuLemoine/my-journey-to-bring-web-push-support-to-node-and-electron-ce70eea1c0b0) for more details.
-
 ## When should I use `push-receiver` ?
 
 - I want to **receive** push notifications sent using Firebase Cloud Messaging in an [electron](https://github.com/electron/electron) desktop application.
@@ -19,53 +15,79 @@ See [this blog post](https://medium.com/@MatthieuLemoine/my-journey-to-bring-web
 ## Install
 
 `
-npm i -S push-receiver
+npm i -S @eneris/push-receiver
 `
 
-## Requirements
+## Requirements 
 
-- Node v8 (async/await support)
-- Firebase sender id to receive notification
-- Firebase serverKey to send notification (optional)
+- Node v20 (async/await/randomUUID/fetch support)
+- Firebase credentials from `Step 1` - https://firebase.google.com/docs/web/setup
+
+## Acknowledgements 
+- https://github.com/MatthieuLemoine - for creating initial module on wich uppon in iterated
 
 ## Usage
 
-### Electron
+### ClientConfig
 
-You can use [electron-push-receiver](https://github.com/MatthieuLemoine/electron-push-receiver) instead which provides a convenient wrapper.
-
-### Node
-
-```javascript
-const { register, listen } = require('push-receiver');
-
-// First time
-// Register to GCM and FCM
-const credentials = await register(senderId); // You should call register only once and then store the credentials somewhere
-storeCredentials(credentials) // Store credentials to use it later
-const fcmToken = credentials.fcm.token; // Token to use to send notifications
-sendTokenToBackendOrWhatever(fcmToken);
-
-
-// Next times
-const credentials = getSavedCredentials() // get your saved credentials from somewhere (file, db, etc...)
-// persistentIds is the list of notification ids received to avoid receiving all already received notifications on start.
-const persistentIds = getPersistentIds() || [] // get all previous persistentIds from somewhere (file, db, etc...)
-await listen({ ...credentials, persistentIds}, onNotification);
-
-// Called on new notification
-function onNotification({ notification, persistentId }) {
-  // Update list of persistentId in file/db/...
-  updatePersistentIds([...persistentIds, persistentId]);
-  // Do someting with the notification
-  display(notification)
+```typescript
+interface ClientConfig {
+    credentials?: Credentials // Will be generated if missing - save this after first use!
+    persistentIds?: PersistentId[] // Default - []
+    bundleId?: string // Default - 'receiver.push.com'
+    chromeId?: string // Default - 'org.chromium.linux'
+    chromeVersion?: string // Default - '94.0.4606.51'
+    debug?: boolean // Enables debug console logs
+    heartbeatIntervalMs?: number // Default - 5 * 60 * 1000
+    firebase: FirebaseConfig // Full client firebase credentials are now needed
 }
 ```
 
-### Test notification
+### Node example
 
-To test, you can use the [send script](scripts/send/index.js) provided in this repo, you need to pass your serverKey and the FCM token as arguments :
+```javascript
+import { PushReceiver } from '@eneris/push-receiver'
 
-```
-node scripts/send --serverKey="<FIREBASE_SERVER_KEY>" --token="<FIREBASE_TOKEN>"
+(async () => {
+    const instance = new PushReceiver({
+        debug: true,
+        persistentIds: [], // Recover stored ids of all previous notifications
+        firebase: {
+            // ...Firebase web credentials
+        },
+        credentials: null, // Insert credentials here after the first run
+    })
+
+    const stopListeningToCredentials = instance.onCredentialsChanged(({ oldCredentials, newCredentials }) => {
+        console.log('Client generated new credentials.', newCredentials)
+        // Save them somewhere! And decide if thing are needed to re-subscribe
+    })
+
+    const stopListeningToNotifications = instance.onNotification(notification => {
+        // Do someting with the notification
+        console.log('Notification received', notification)
+    })
+
+    await instance.connect()
+
+    
+    await instance.connect()
+
+    console.log('connected')
+
+    const sender = new PushSender({
+        // Firebase service account credentials here
+    })
+
+    console.log('server created')
+
+    await sender.testMessage(instance.config.credentials.fcm.token)
+
+    console.log('message sent')
+
+    stopListeningToCredentials()
+    stopListeningToNotifications()
+
+    instance.destroy()
+})()
 ```
