@@ -16,10 +16,15 @@ interface EncryptedMessage {
 // Parses a header value like "dh=BASE64; p256ecdsa=BASE64" into { dh: "BASE64", p256ecdsa: "BASE64" }
 function parseHeaderParams(header: string): Record<string, string> {
     return Object.fromEntries(
-        header.split(';').map(part => {
-            const [key, ...rest] = part.trim().split('=')
-            return [key, rest.join('=')]
-        })
+        header
+            .split(';')
+            .map(part => {
+                const [key, ...rest] = part.trim().split('=')
+                const trimmedKey = key.trim()
+                const value = rest.join('=').trim()
+                return [trimmedKey, value]
+            })
+            .filter(([key]) => key !== '')
     )
 }
 
