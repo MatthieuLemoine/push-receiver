@@ -13,6 +13,16 @@ interface EncryptedMessage {
     rawData: Buffer
 }
 
+// Parses a header value like "dh=BASE64; p256ecdsa=BASE64" into { dh: "BASE64", p256ecdsa: "BASE64" }
+function parseHeaderParams(header: string): Record<string, string> {
+    return Object.fromEntries(
+        header.split(';').map(part => {
+            const [key, ...rest] = part.trim().split('=')
+            return [key, rest.join('=')]
+        })
+    )
+}
+
 // https://tools.ietf.org/html/draft-ietf-webpush-encryption-03
 export default function decrypt<T = Types.MessageEnvelope>(object: EncryptedMessage, keys: Types.Keys): T {
     const cryptoKey = object.appData.find(item => item.key === 'crypto-key')
@@ -21,15 +31,21 @@ export default function decrypt<T = Types.MessageEnvelope>(object: EncryptedMess
     const salt = object.appData.find(item => item.key === 'encryption')
     if (!salt) throw new Error('salt is missing')
 
+    const cryptoKeyParams = parseHeaderParams(cryptoKey.value)
+    const saltParams = parseHeaderParams(salt.value)
+
+    if (!cryptoKeyParams.dh) throw new Error('crypto-key header is missing dh parameter')
+    if (!saltParams.salt) throw new Error('encryption header is missing salt parameter')
+
     const dh = crypto.createECDH('prime256v1')
     dh.setPrivateKey(keys.privateKey, 'base64')
 
     const params = {
         version: 'aesgcm',
         authSecret: keys.authSecret,
-        dh: cryptoKey.value.slice(3),
+        dh: cryptoKeyParams.dh,
         privateKey: dh,
-        salt: salt.value.slice(5),
+        salt: saltParams.salt,
     }
     const decrypted = ece.decrypt(object.rawData, params)
 
