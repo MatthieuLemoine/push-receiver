@@ -16,7 +16,7 @@
         "protos:copy": "cp ./src/protos.* ./dist/",
         "build": "yarn protos:build && yarn tsc && yarn protos:copy",
         "prepublish": "yarn build",
-        "lint": "yarn eslint src --ext .ts",
+        "lint": "yarn eslint 'src/**/*.ts'",
         "precommit": "yarn lint && yarn build",
         "prepare": "yarn prepublish"
     },

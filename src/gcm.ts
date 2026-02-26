@@ -26,7 +26,7 @@ export async function checkIn(config: Types.ClientConfig): Promise<Types.GcmChec
         headers: {
             'Content-Type': 'application/x-protobuf',
         },
-        body: prepareCheckinBuffer(config),
+        body: prepareCheckinBuffer(config) as Uint8Array<ArrayBuffer>,
     })).arrayBuffer()
 
 

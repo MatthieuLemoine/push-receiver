@@ -2,6 +2,7 @@ import { EventEmitter } from "node:events"
 
 export type Unsubscribe = CallableFunction
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface EmitterEvents {}
 
 export default class ClassWithEmitter<EventMap extends EmitterEvents> {

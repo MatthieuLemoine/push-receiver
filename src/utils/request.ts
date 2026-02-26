@@ -30,7 +30,7 @@ async function retry(retryCount = 0, url: string, options?: globalThis.RequestIn
 
                 return retry(retryCount + 1, url, options)
             })
-    } catch (error) {
+    } catch {
         Logger.debug('Request failed with network error. Wait 10s and retry')
         // Fetch throws only for network errors. In that case we wait a bit and retry without increasing the count
         await delay(10_000) // 10 seconds
